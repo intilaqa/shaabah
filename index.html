@@ -317,12 +317,35 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 .impcard.off{opacity:.55}
 .preview{font-size:.82rem;background:var(--ok-soft);border-radius:10px;padding:8px 10px}
 
+.role{position:fixed;inset:0;z-index:60;overflow:auto;background:linear-gradient(160deg,var(--sky-morning-1),var(--sky-morning-2) 60%,var(--bg));display:flex;align-items:center;justify-content:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.role-in{width:100%;max-width:440px;display:flex;flex-direction:column;gap:12px;text-align:center;align-items:center}
+.role-mark{width:56px;height:56px;border-radius:16px;background:var(--accent);display:grid;place-items:center}
+.role-mark i{width:20px;height:20px;border-radius:5px;background:var(--surface);transform:rotate(45deg)}
+.role h1{font-family:var(--f-hero);font-size:1.6rem;margin:6px 0 0}
+.role p{margin:0;color:var(--muted)}
+.role-btns{display:grid;gap:10px;width:100%;margin-top:6px}
+.role-btns button{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:14px;align-items:center;text-align:start;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 30px -22px rgba(0,0,0,.5)}
+.role-btns button:hover,.role-btns button:focus-visible{border-color:var(--accent)}
+.role-btns .e{grid-row:1/3;font-size:2rem;line-height:1}
+.role-btns b{font-family:var(--f-hero);font-size:1.2rem}
+.role-btns small{color:var(--muted);font-size:.82rem}
+.role .role-ft{font-size:.8rem;margin-top:6px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px);text-align:center;background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:14px;font-size:.85rem;font-weight:600;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.on{opacity:1}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}.spin{animation:none}}
 </style>
 
 <div dir="rtl" lang="ar">
+<div id="role" class="role" hidden><div class="role-in">
+  <span class="role-mark"><i></i></span>
+  <h1>أهلًا بك في سجل الحضور</h1>
+  <p>مين معنا؟</p>
+  <div class="role-btns">
+    <button data-role="s"><span class="e">🎓</span><b>أنا طالبة</b><small>جدول شعبتي، القاعات، الإعلانات، وإرسال عذر</small></button>
+    <button data-role="t"><span class="e">👩‍🏫</span><b>أنا الأستاذة</b><small>التحضير، السجلات، التنبيهات، والأعذار</small></button>
+  </div>
+  <p class="role-ft">يعمل بدون إنترنت، ويحفظ ويرفع تلقائيًا عند الاتصال</p>
+</div></div>
 <header class="top"><div class="wrap">
   <div class="bar"><p class="brand"><i></i>سجل الحضور</p><div class="sum" id="sum"></div></div>
   <nav class="tabs" role="tablist">
@@ -336,12 +359,24 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
 <script>
+/* ---------- who is opening: student or teacher ---------- */
+(function(){
+  const get=()=>{try{return localStorage.getItem('reg.role')}catch(e){return null}},put=v=>{try{v?localStorage.setItem('reg.role',v):localStorage.removeItem('reg.role')}catch(e){}};
+  const q=new URLSearchParams(location.search).get('role');if(q==='t'||q==='s')put(q);
+  const r=get();if(r==='s'){location.replace('excuse.html');return}
+  const box=document.getElementById('role');if(!r)box.hidden=false;
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-role]');
+    if(b){e.stopPropagation();put(b.dataset.role);if(b.dataset.role==='s')location.href='excuse.html';else{box.hidden=true;window.scrollTo(0,0)}return}
+    if(e.target.closest('[data-role-switch]')){put(null);box.hidden=false}
+  },true);
+})();
 const DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
 const DEF={minAttend:75,warn1:10,warn2:20,cutWeeks:4,lateEq:0,countExcused:true,sample:false,terms:[],currentTerm:'',profile:{name:'',title:'أستاذة'}};
 const MK={p:{t:'ح',l:'حاضرة'},a:{t:'غ',l:'غائبة'},l:{t:'ت',l:'متأخرة'},e:{t:'ع',l:'غائبة بعذر'}};
@@ -462,7 +497,7 @@ let cacheT;function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>lsSet
 /* ---------- header ---------- */
 function renderHead(stats){
   const d=stats.filter(x=>x.level===3).length,c=stats.filter(x=>x.cut).length;
-  const pend=Object.keys(S.outbox).length,off=false;
+  const pend=Object.keys(S.outbox).length,off=navigator.onLine===false;
   $('sum').innerHTML=(S.status==='loading'?'':(d?`<span class="pill deny num">${d} حرمان</span>`:'')+(c?`<span class="pill cut num">${c} انقطاع</span>`:''))+
     `<span class="net ${off||pend?'off':''}"><i></i>${pend?'جارٍ الحفظ':'محفوظ على الجهاز'}</span>`;
   const nw=stats.filter(isNew).length;

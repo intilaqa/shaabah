@@ -5,14 +5,17 @@ const CFG=Object.assign({url:'',key:''},window.REG_CONFIG||{},lsGet('reg.cloudcf
 const KIND_EMO={'مرضي':'🤒','وفاة':'🖤','ظرف عائلي':'🏠','موعد رسمي':'📄','أخرى':'✏️'};
 const REJECT=['لا يوجد ما يثبت','خارج المدة المسموحة','العذر غير مقبول','التاريخ غير صحيح'];
 const C={sb:null,user:null,owner:false,status:'off',err:'',pending:new Set(lsGet('reg.cloud.pending')||[]),lastPull:lsGet('reg.cloud.lastPull')||'',
-  ex:lsGet('reg.exc')||[],ann:lsGet('reg.ann')||[],annOpen:false,exAt:lsGet('reg.excAt')||0,exFilter:'pending',rejFor:null,busy:false,applying:false,authMode:'in'};
+  ex:[],exLoaded:false,ann:lsGet('reg.ann')||[],annOpen:false,exAt:0,exFilter:'pending',rejFor:null,busy:false,applying:false,authMode:'in',q:lsGet('reg.cloud.q')||[],ver:{}};
 window.CLOUD=C;
+/* excuses live in Supabase only — never stored on the teacher's phone */
+try{localStorage.removeItem('reg.exc');localStorage.removeItem('reg.excAt')}catch(_){}
 const savePending=()=>lsSet('reg.cloud.pending',[...C.pending]);
+const saveQ=()=>lsSet('reg.cloud.q',C.q);
 const online=()=>navigator.onLine!==false;
 const configured=()=>!!(CFG.url&&CFG.key&&window.supabase);
 
 /* ---- local writes → pending ---- */
-window.onLocalWrite=p=>{if(C.applying)return;C.pending.add(p);savePending();schedulePush()};
+window.onLocalWrite=p=>{if(C.applying)return;C.ver[p]=(C.ver[p]||0)+1;C.pending.add(p);savePending();schedulePush()};
 let pushT;function schedulePush(){clearTimeout(pushT);pushT=setTimeout(()=>sync(),1200)}
 
 /* ---- approved excuses feed the attendance sheet ---- */
@@ -47,15 +50,17 @@ async function sync(full){
     /* push */
     const paths=[...C.pending];let secChanged=false;
     for(let i=0;i<paths.length;i+=200){const part=paths.slice(i,i+200);
-      const rows=part.map(p=>{const d=LDB.raw(p);secChanged=true;return{path:p,data:d,deleted:d==null}});
-      const {error}=await C.sb.from('docs').upsert(rows);if(error)throw error;part.forEach(p=>C.pending.delete(p));savePending()}
+      const v0={};const rows=part.map(p=>{v0[p]=C.ver[p]||0;const d=LDB.raw(p);secChanged=true;return{path:p,data:d,deleted:d==null}});
+      const {error}=await C.sb.from('docs').upsert(rows);if(error)throw error;part.forEach(p=>{if((C.ver[p]||0)===v0[p])C.pending.delete(p)});savePending()}
+    await flushQ();
     if(secChanged||full)await publishSections();
     /* pull */
-    let q=C.sb.from('docs').select('path,data,deleted,updated_at').order('updated_at',{ascending:true}).limit(1000);
-    if(C.lastPull)q=q.gt('updated_at',C.lastPull);
-    const {data,error}=await q;if(error)throw error;
-    if(data&&data.length){C.applying=true;try{for(const r of data){if(C.pending.has(r.path))continue;LDB.applyRemote(r.path,r.deleted?null:r.data)}}finally{C.applying=false}
-      C.lastPull=data[data.length-1].updated_at;lsSet('reg.cloud.lastPull',C.lastPull)}
+    for(let page=0;page<50;page++){
+      let q=C.sb.from('docs').select('path,data,deleted,updated_at').order('updated_at',{ascending:true}).limit(1000);
+      if(C.lastPull)q=q.gt('updated_at',C.lastPull);
+      const {data,error}=await q;if(error)throw error;if(!data||!data.length)break;
+      C.applying=true;try{for(const r of data){if(C.pending.has(r.path))continue;LDB.applyRemote(r.path,r.deleted?null:r.data)}}finally{C.applying=false}
+      C.lastPull=data[data.length-1].updated_at;lsSet('reg.cloud.lastPull',C.lastPull);if(data.length<1000)break}
     await loadExcuses();await loadAnn();
     C.status='ok';C.err='';
   }catch(e){C.status='error';C.err=(e&&e.message)||'تعذّرت المزامنة'}
@@ -70,10 +75,25 @@ async function publishSections(){
   const ids=list.map(c=>c.id);const {data}=await C.sb.from('sections_public').select('id');
   const gone=(data||[]).map(r=>r.id).filter(id=>!ids.includes(id));if(gone.length)await C.sb.from('sections_public').delete().in('id',gone);
 }
-async function loadAnn(){const {data,error}=await C.sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(200);if(!error){C.ann=data||[];lsSet('reg.ann',C.ann)}}
+/* actions done without internet wait here and are sent in order once online */
+async function flushQ(){
+  while(C.q.length){const a=C.q[0];let r;
+    if(a.t==='dec')r=await C.sb.from('excuses').update({status:a.status,reason:a.reason||null,decided_at:a.status==='pending'?null:a.at}).eq('id',a.id);
+    else if(a.t==='ann'){const row={...a.row};delete row.id;delete row.created_at;r=await C.sb.from('announcements').insert(row)}
+    else if(a.t==='annDel')r=await C.sb.from('announcements').delete().eq('id',a.id);
+    if(r&&r.error)throw r.error;C.q.shift();saveQ()}
+}
+function overlayQ(){
+  for(const a of C.q){
+    if(a.t==='dec'){const e=C.ex.find(x=>x.id===a.id);if(e){e.status=a.status;e.reason=a.reason||null}}
+    else if(a.t==='ann'){if(!C.ann.find(x=>x.id===a.row.id))C.ann.unshift(a.row)}
+    else if(a.t==='annDel')C.ann=C.ann.filter(x=>x.id!==a.id)}
+}
+function enqueue(a){C.q.push(a);saveQ();overlayQ();lsSet('reg.ann',C.ann);if(online())sync();else renderHead(computeStats())}
+async function loadAnn(){const {data,error}=await C.sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(200);if(!error){C.ann=data||[];overlayQ();lsSet('reg.ann',C.ann)}}
 async function loadExcuses(){
   const {data,error}=await C.sb.from('excuses').select('*').order('created_at',{ascending:false}).limit(1000);if(error)throw error;
-  C.ex=data||[];C.exAt=Date.now();lsSet('reg.exc',C.ex);lsSet('reg.excAt',C.exAt);
+  C.ex=data||[];overlayQ();C.exAt=Date.now();C.exLoaded=true;
 }
 window.addEventListener('online',()=>{if(C.user)afterLogin()});
 window.addEventListener('offline',()=>{if(C.sb){C.status='offline';render()}});
@@ -84,7 +104,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&C.owner&&
 const _renderHead=renderHead;
 renderHead=function(stats){_renderHead(stats);
   const net=document.querySelector('#sum .net');
-  if(net&&C.sb){const pend=C.pending.size+Object.keys(S.outbox).length;
+  if(net&&C.sb){const pend=C.pending.size+Object.keys(S.outbox).length+C.q.length;
     const t=C.status==='ok'?(pend?'جارٍ الرفع':'متزامن'):C.status==='syncing'?'جارٍ المزامنة':C.status==='offline'?(pend?`${pend} بانتظار النت`:'بدون اتصال'):C.status==='login'?'غير مسجّلة':C.status==='error'?'خطأ في الاتصال':'على الجهاز';
     net.className='net'+(C.status==='ok'&&!pend?'':' off');net.innerHTML='<i></i>'+t}
   const n=C.ex.filter(e=>e.status==='pending').length,b=document.querySelector('.tabs button[data-tab="exc"]');
@@ -117,14 +137,15 @@ window.vExc=function(stats){
   ${C.annOpen?`<div class="card form"><div class="f"><label for="anb">نص الإعلان</label><textarea id="anb" maxlength="500" placeholder="مثال: محاضرة الأحد ستكون في قاعة SH-BF-04 بدل القاعة المعتادة"></textarea></div>
     <div class="setgrid"><div class="f"><label for="ans">لمن؟</label><select id="ans"><option value="">كل الشعب</option>${secs().map(c=>`<option value="${esc(c.id)}">${esc(c.short||c.name)}</option>`).join('')}</select></div>
     <div class="f"><label for="anu">يظهر حتى</label><input id="anu" type="date" value="${ymd(new Date(Date.now()+7*864e5))}"></div></div>
-    <div><button class="btn pri" data-act="annPost"${online()?'':' disabled'}>نشر الإعلان</button></div></div>`:''}
-  ${act.length?`<div class="alerts">${act.map(a=>{const c=a.section_id&&cById(a.section_id);return `<div class="card annc"><p>📢 ${esc(a.body)}</p><div class="facts"><span>${c?esc(c.short||c.name):'كل الشعب'}</span>${a.until?`<span class="num">حتى ${esc(fD.format(pd(a.until)))}</span>`:''}<button class="lnk red" data-act="annDel" data-id="${esc(a.id)}"${online()?'':' disabled'}>حذف</button></div></div>`}).join('')}</div>`:'<p class="hint">لا إعلانات حالية. المحاضرات المُلغاة تظهر للطالبات تلقائيًا.</p>'}
+    <div><button class="btn pri" data-act="annPost">نشر الإعلان</button></div></div>`:''}
+  ${act.length?`<div class="alerts">${act.map(a=>{const c=a.section_id&&cById(a.section_id);return `<div class="card annc"><p>📢 ${esc(a.body)}</p><div class="facts"><span>${c?esc(c.short||c.name):'كل الشعب'}</span>${a.until?`<span class="num">حتى ${esc(fD.format(pd(a.until)))}</span>`:''}<button class="lnk red" data-act="annDel" data-id="${esc(a.id)}">حذف</button></div></div>`}).join('')}</div>`:'<p class="hint">لا إعلانات حالية. المحاضرات المُلغاة تظهر للطالبات تلقائيًا.</p>'}
   </section><section class="sec"><div class="sec-h"><h2>أعذار الطالبات</h2><button class="lnk" data-act="exRefresh">${C.busy?'جارٍ التحديث…':'تحديث'}</button></div>
-  ${!online()?`<div class="banner warn" style="margin:0">بدون اتصال. تعرض آخر أعذار وصلت ${C.exAt?'('+esc(fT.format(new Date(C.exAt)))+')':''}، والاعتماد يحتاج اتصالًا.</div>`:''}
+  ${!online()?`<div class="banner warn" style="margin:0">بدون اتصال. الأعذار محفوظة في قاعدة البيانات على الإنترنت فقط ولا تُخزَّن على جوالك${C.exLoaded?'، والمعروض هنا من آخر فتح للصفحة':''}. قراراتك تُرفع تلقائيًا عند الاتصال${C.q.length?` (<b class="num">${C.q.length}</b> بالانتظار)`:''}.</div>`:''}
   <div class="filters">${[['pending','بانتظارك'],['approved','معتمدة'],['rejected','مرفوضة']].map(([k,t])=>`<button data-act="exFilter" data-f="${k}" aria-pressed="${f===k}">${t} <span class="num">${cnt(k)}</span></button>`).join('')}</div>
   <div class="rule" style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>رابط صفحة الطالبات (الجدول والإعلانات والأعذار)</span><button class="btn sm" data-act="exLink">نسخ الرابط</button></div>`;
   const list=C.ex.filter(e=>e.status===f);
-  if(!list.length)h+=`<div class="card empty"><b>${f==='pending'?'لا أعذار بانتظارك':'لا شيء هنا بعد'}</b>${f==='pending'?'أي عذر ترسله طالبة يظهر هنا فور الاتصال.':''}</div>`;
+  if(!C.exLoaded)h+=`<div class="card empty"><b>${online()?'جارٍ جلب الأعذار…':'الأعذار تظهر عند الاتصال'}</b>تُقرأ الأعذار من قاعدة البيانات مباشرة ولا تُحفظ على جوالك.</div>`;
+  else if(!list.length)h+=`<div class="card empty"><b>${f==='pending'?'لا أعذار بانتظارك':'لا شيء هنا بعد'}</b>${f==='pending'?'أي عذر ترسله طالبة يظهر هنا فور الاتصال.':''}</div>`;
   else{h+='<div class="alerts">';
     for(const e of list){const{c,m}=lectureOf(e),s=matchStudent(e),x=s&&stats.find(z=>z.s.id===s.id&&z.c.id===e.section_id),mk=markOf(e,s);
       const st=e.status==='approved'?'ok':e.status==='rejected'?'deny':'';
@@ -137,24 +158,23 @@ window.vExc=function(stats){
         ${e.status==='rejected'&&e.reason?`<div class="absd">سبب الرفض: ${esc(e.reason)}</div>`:''}
         ${e.status==='pending'?(C.rejFor===e.id?`<div class="rule"><b>سبب الرفض</b><div class="reasons" style="margin-top:8px">${REJECT.map(r=>`<button class="btn sm" data-act="exReason" data-r="${esc(r)}">${r}</button>`).join('')}</div>
             <div class="inline" style="margin-top:8px"><div class="f"><input id="rj-${esc(e.id)}" placeholder="أو اكتبي السبب"></div><button class="btn danger armed" data-act="exReject" data-id="${esc(e.id)}">تأكيد الرفض</button><button class="btn" data-act="exRejCancel">إلغاء</button></div></div>`
-          :`<div class="exacts"><button class="btn pri lg" data-act="exApprove" data-id="${esc(e.id)}"${online()?'':' disabled'}>✓ اعتماد</button><button class="btn danger lg" data-act="exRejOpen" data-id="${esc(e.id)}"${online()?'':' disabled'}>✗ رفض</button></div>`)
-          :`<div class="inline"><button class="btn sm" data-act="exCopy" data-id="${esc(e.id)}">نسخ الرد للطالبة</button><button class="lnk mut" data-act="exUndo" data-id="${esc(e.id)}"${online()?'':' disabled'}>تراجع</button></div>`}
+          :`<div class="exacts"><button class="btn pri lg" data-act="exApprove" data-id="${esc(e.id)}">✓ اعتماد</button><button class="btn danger lg" data-act="exRejOpen" data-id="${esc(e.id)}">✗ رفض</button></div>`)
+          :`<div class="inline"><button class="btn sm" data-act="exCopy" data-id="${esc(e.id)}">نسخ الرد للطالبة</button><button class="lnk mut" data-act="exUndo" data-id="${esc(e.id)}">تراجع</button></div>`}
       </div></article>`}
     h+='</div>'}
   return h+`<p class="rule">عند الاعتماد يتحوّل غياب الطالبة في تلك المحاضرة إلى «غائبة بعذر» وتتعدّل نسبتها. العذر المرسل بعد أكثر من <b class="num">${lateDays()}</b> أيام من المحاضرة يظهر بعلامة «متأخر».</p></section>`;
 };
 async function decide(id,status,reason){
   const e=C.ex.find(x=>x.id===id);if(!e)return;
-  const {error}=await C.sb.from('excuses').update({status,reason:reason||null,decided_at:status==='pending'?null:new Date().toISOString()}).eq('id',id);
-  if(error){toast('تعذّر الحفظ، تحققي من الاتصال');return}
-  e.status=status;e.reason=reason||null;lsSet('reg.exc',C.ex);
+  C.q=C.q.filter(a=>!(a.t==='dec'&&a.id===id));
+  e.status=status;e.reason=reason||null;enqueue({t:'dec',id,status,reason:reason||null,at:new Date().toISOString()});
   const s=matchStudent(e),{c,m}=lectureOf(e);
   if(s&&c){const d=allAtt().find(x=>x.classId===c.id&&x.date===e.lecture_date&&(!m||x.meetingId===m.id)&&!x.cancelled);
     if(d){const cur=(d.marks||{})[s.id];let nv=null;
       if(status==='approved'&&cur!=='e'&&cur!=='p'&&cur!=='l')nv='e';
       if(status!=='approved'&&cur==='e')nv='a';
       if(nv){const body={...d,marks:{...d.marks,[s.id]:nv},updatedAt:new Date().toISOString()};delete body.id;queue(d.id,body)}}}
-  toast(status==='approved'?'اعتُمد العذر ✓':status==='rejected'?'رُفض العذر':'أُعيد العذر للانتظار');C.rejFor=null;render();
+  toast((status==='approved'?'اعتُمد العذر ✓':status==='rejected'?'رُفض العذر':'أُعيد العذر للانتظار')+(online()?'':' — يُرفع عند الاتصال'));C.rejFor=null;render();
 }
 async function openFile(id){const e=C.ex.find(x=>x.id===id);if(!e||!e.file_path)return;
   const w=window.open('','_blank');
@@ -173,11 +193,11 @@ vManage=function(){let h=_vManage();
     <div class="setgrid"><div class="f"><label for="ce">البريد الإلكتروني</label><input id="ce" type="email" autocomplete="email" dir="ltr"></div><div class="f"><label for="cp">كلمة المرور</label><input id="cp" type="password" autocomplete="${C.authMode==='up'?'new-password':'current-password'}" dir="ltr"></div></div>
     <div class="inline"><button class="btn pri" data-act="cAuth">${C.authMode==='up'?'إنشاء الحساب':'تسجيل الدخول'}</button><button class="lnk" data-act="cMode">${C.authMode==='up'?'عندي حساب':'أول مرة؟ أنشئي حسابًا'}</button></div>`;
   else box=`<div class="state"><span>${C.owner?'✅ مرتبطة':C.status==='notowner'?'⚠️ هذا الحساب ليس صاحب السجل':'…'} <span class="hint" dir="ltr">${esc(C.user.email||'')}</span></span><button class="lnk mut" data-act="cOut">تسجيل الخروج</button></div>
-    <div class="facts num"><span>الحالة: <b>${{ok:'متزامن',syncing:'جارٍ المزامنة',offline:'بدون اتصال',error:'خطأ',notowner:'غير مصرّح'}[C.status]||'—'}</b></span><span>بانتظار الرفع: <b>${C.pending.size}</b></span></div>
+    <div class="facts num"><span>الحالة: <b>${{ok:'متزامن',syncing:'جارٍ المزامنة',offline:'بدون اتصال',error:'خطأ',notowner:'غير مصرّح'}[C.status]||'—'}</b></span><span>بانتظار الرفع: <b>${C.pending.size+C.q.length}</b></span></div>
     ${C.owner?`<div class="inline"><button class="btn" data-act="exLink">نسخ رابط الأعذار للطالبات</button><button class="btn" data-act="cSync">مزامنة الآن</button></div>
     <div class="setgrid"><div class="f"><label for="xd">العذر متأخر بعد (أيام)</label><input id="xd" type="number" min="1" max="60" value="${lateDays()}"></div></div><div><button class="btn sm" data-act="cDays">حفظ</button></div>`:''}`;
   if(C.err)box+=`<div class="banner err" style="margin:0">${esc(C.err)}</div>`;
-  const sec=`<section class="sec"><h2>الربط بالإنترنت والأعذار</h2><div class="card form">${box}<p class="rule">التحضير يُحفظ على جوالك دائمًا، ويُرفع تلقائيًا عند توفر النت. الأعذار تبقى على الإنترنت ولا تأخذ مساحة من جوالك.</p></div></section>`;
+  const sec=`<section class="sec"><h2>الربط بالإنترنت والأعذار</h2><div class="card form">${box}<p class="rule">التحضير والإعداد يعملان بدون إنترنت ويُحفظان على جوالك ثم يُرفعان تلقائيًا. أعذار الطالبات ومرفقاتها تبقى في قاعدة البيانات على الإنترنت فقط ولا تُخزَّن على جوالك.</p></div></section>`;
   return sec+h};
 
 /* ---- actions ---- */
@@ -186,8 +206,10 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   case 'annToggle':C.annOpen=!C.annOpen;render();break;
   case 'annPost':{const body=document.getElementById('anb').value.trim();if(body.length<2){toast('اكتبي نص الإعلان');return}
     const row={body,section_id:document.getElementById('ans').value||null,until:document.getElementById('anu').value||null};
-    const {error}=await C.sb.from('announcements').insert(row);if(error){toast('تعذّر النشر');return}C.annOpen=false;await loadAnn();toast('نُشر الإعلان للطالبات 📢');render();break}
-  case 'annDel':{const {error}=await C.sb.from('announcements').delete().eq('id',t.dataset.id);if(error){toast('تعذّر الحذف');return}await loadAnn();render();break}
+    row.id='tmp-'+Date.now().toString(36);row.created_at=new Date().toISOString();C.annOpen=false;enqueue({t:'ann',row});
+    toast(online()?'نُشر الإعلان للطالبات 📢':'حُفظ الإعلان وسيُنشر عند الاتصال 📢');render();break}
+  case 'annDel':{const id=t.dataset.id;C.ann=C.ann.filter(x=>x.id!==id);
+    if(id.startsWith('tmp-')){C.q=C.q.filter(a=>!(a.t==='ann'&&a.row.id===id));saveQ();lsSet('reg.ann',C.ann)}else enqueue({t:'annDel',id});render();break}
   case 'exFilter':C.exFilter=t.dataset.f;C.rejFor=null;render();break;
   case 'exRefresh':sync();break;
   case 'exApprove':decide(t.dataset.id,'approved');break;
@@ -196,7 +218,7 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   case 'exReason':{const i=document.getElementById('rj-'+C.rejFor);if(i)i.value=t.dataset.r;break}
   case 'exReject':{const i=document.getElementById('rj-'+t.dataset.id);const r=i&&i.value.trim();if(!r){toast('اختاري سببًا أو اكتبيه');return}decide(t.dataset.id,'rejected',r);break}
   case 'exUndo':decide(t.dataset.id,'pending');break;
-  case 'exFile':openFile(t.dataset.id);break;
+  case 'exFile':if(!online()){toast('عرض المرفق يحتاج اتصالًا');break}openFile(t.dataset.id);break;
   case 'exCopy':{const e=C.ex.find(x=>x.id===t.dataset.id);try{await navigator.clipboard.writeText(replyFor(e));toast('نُسخ الرد، الصقيه في واتساب')}catch(_){toast('تعذّر النسخ')}break}
   case 'exLink':{try{await navigator.clipboard.writeText(studentLink());toast('نُسخ رابط الأعذار')}catch(_){toast(studentLink(),5000)}break}
   case 'cMode':C.authMode=C.authMode==='up'?'in':'up';render();break;
