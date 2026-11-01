@@ -283,7 +283,7 @@ window.vExc=function(stats){
   </section><section class="sec"><div class="sec-h"><h2>أعذار الطالبات</h2><button class="lnk" data-act="exRefresh">${C.busy?'جارٍ التحديث…':'تحديث'}</button></div>
   ${!online()?`<div class="banner warn" style="margin:0">بدون اتصال. الأعذار محفوظة في قاعدة البيانات على الإنترنت فقط ولا تُخزَّن على جوالك${C.exLoaded?'، والمعروض هنا من آخر فتح للصفحة':''}. قراراتك تُرفع تلقائيًا عند الاتصال${C.q.length?` (<b class="num">${C.q.length}</b> بالانتظار)`:''}.</div>`:''}
   <div class="filters">${[['pending','بانتظارك'],['approved','معتمدة'],['rejected','مرفوضة']].map(([k,t])=>`<button data-act="exFilter" data-f="${k}" aria-pressed="${f===k}">${t} <span class="num">${cnt(k)}</span></button>`).join('')}</div>
-  <div class="rule" style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>رابط صفحة الطالبات (الجدول والإعلانات والأعذار)</span><button class="btn sm" data-act="exLink">نسخ الرابط</button></div>`;
+  <div class="rule" style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>🔗 رابط صفحة الطالبات: أرسليه لهن مرة واحدة، ومنه يدخلن بإيميلهن الجامعي ويرسلن الأعذار والرسائل</span><button class="btn sm" data-act="exLink">نسخ الرابط</button></div>`;
   const list=C.ex.filter(e=>e.status===f);
   if(!C.exLoaded)h+=`<div class="card empty"><b>${online()?'جارٍ جلب الأعذار…':'الأعذار تظهر عند الاتصال'}</b>تُقرأ الأعذار من قاعدة البيانات مباشرة ولا تُحفظ على جوالك.</div>`;
   else if(!list.length)h+=`<div class="card empty"><b>${f==='pending'?'لا أعذار بانتظارك':'لا شيء هنا بعد'}</b>${f==='pending'?'أي عذر ترسله طالبة يظهر هنا فور الاتصال.':''}</div>`;
@@ -335,7 +335,7 @@ vManage=function(){let h=_vManage();
     <div class="inline"><button class="btn pri" data-act="cAuth">${C.authMode==='up'?'إنشاء الحساب':'تسجيل الدخول'}</button><button class="lnk" data-act="cMode">${C.authMode==='up'?'عندي حساب':'أول مرة؟ أنشئي حسابًا'}</button></div>`;
   else box=`<div class="state"><span>${C.owner?'✅ مرتبطة':C.status==='notowner'?'⚠️ هذا الحساب ليس حساب أستاذة':'…'} <span class="hint" dir="ltr">${esc(C.user.email||'')}</span></span><button class="lnk mut" data-act="cOut">تسجيل الخروج</button></div>
     <div class="facts num"><span>الحالة: <b>${{ok:'متزامن',syncing:'جارٍ المزامنة',offline:'بدون اتصال',error:'خطأ',notowner:'غير مصرّح'}[C.status]||'—'}</b></span><span>بانتظار الرفع: <b>${C.pending.size+C.q.length}</b></span></div>
-    ${C.owner?`<div class="inline"><button class="btn" data-act="exLink">نسخ رابط الأعذار للطالبات</button><button class="btn" data-act="cSync">مزامنة الآن</button></div>
+    ${C.owner?`<div class="inline"><button class="btn" data-act="exLink">🔗 نسخ رابط صفحة الطالبات</button><button class="btn" data-act="cSync">مزامنة الآن</button></div>
     <div class="setgrid"><div class="f"><label for="xd">العذر متأخر بعد (أيام)</label><input id="xd" type="number" min="1" max="60" value="${lateDays()}"></div></div><div><button class="btn sm" data-act="cDays">حفظ</button></div>`:''}`;
   if(C.err)box+=`<div class="banner err" style="margin:0">${esc(C.err)}</div>`;
   const sec=`<section class="sec"><h2>الربط بالإنترنت والأعذار</h2><div class="card form">${box}<p class="rule">التحضير والإعداد يعملان بدون إنترنت ويُحفظان على جوالك ثم يُرفعان تلقائيًا. أعذار الطالبات ومرفقاتها تبقى في قاعدة البيانات على الإنترنت فقط ولا تُخزَّن على جوالك.</p></div></section>`;
@@ -413,7 +413,7 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   case 'exUndo':decide(t.dataset.id,'pending');break;
   case 'exFile':if(!online()){toast('عرض المرفق يحتاج اتصالًا');break}openFile(t.dataset.id);break;
   case 'exCopy':{const e=C.ex.find(x=>x.id===t.dataset.id);try{await navigator.clipboard.writeText(replyFor(e));toast('نُسخ الرد، الصقيه في واتساب')}catch(_){toast('تعذّر النسخ')}break}
-  case 'exLink':{try{await navigator.clipboard.writeText(studentLink());toast('نُسخ رابط الأعذار')}catch(_){toast(studentLink(),5000)}break}
+  case 'exLink':{try{await navigator.clipboard.writeText(studentLink());toast('نُسخ رابط صفحة الطالبات، أرسليه لهن')}catch(_){toast(studentLink(),5000)}break}
   case 'cMode':C.authMode=C.authMode==='up'?'in':'up';render();break;
   case 'cAuth':case 'gAuth':{const g=a==='gAuth';await doAuth((document.getElementById(g?'ge':'ce')||{}).value||'',(document.getElementById(g?'gp':'cp')||{}).value||'');break}
   case 'gReset':{const email=((document.getElementById('ge')||{}).value||'').trim();if(!email){C.err='اكتبي بريدك أولًا';render();return}
