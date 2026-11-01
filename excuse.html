@@ -226,7 +226,7 @@ function loginView(){
   v.innerHTML=`<section class="card"><h1>ادخلي بإيميلك الجامعي 🎓</h1>
   ${L.step==='email'?`<p class="sub">نرسل لك رمز دخول على إيميلك الجامعي. تدخلين مرة واحدة فقط على هذا الجوال.</p>
     <div class="f"><label for="le">الإيميل الجامعي أو الرقم الجامعي</label><input id="le" dir="ltr" autocomplete="email" inputmode="email" value="${esc(L.email)}" placeholder="446000819@${esc(DOMAIN)}"></div>
-    ${L.err?`<div class="err">${esc(L.err)}</div>`:''}
+    ${L.err?`<div class="err">${esc(L.err)}${L.detail?`<small style="display:block;direction:ltr;opacity:.8;margin-top:4px">${esc(L.detail)}</small>`:''}</div>`:''}
     <div class="nav"><span></span><button class="btn" data-a="lSend"${L.busy?' disabled':''}>${L.busy?'<span class="spin"></span>جارٍ الإرسال':'أرسلي الرمز'}</button></div>`
   :`<p class="sub">أرسلنا رمزًا إلى <b dir="ltr">${esc(L.email)}</b>. افتحي بريدك الجامعي (Outlook)، وتأكدي من مجلد «الرسائل غير الهامة».</p>
     <div class="f"><label for="lc">رمز الدخول</label><input id="lc" dir="ltr" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="font-size:1.4rem;letter-spacing:.3em;text-align:center"></div>
@@ -342,7 +342,9 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-a]')
     if(!online()){S.login.err='لا يوجد اتصال بالإنترنت.';render();return}
     S.login.busy=true;S.login.err='';render();
     const {error}=await sb.auth.signInWithOtp({email:em,options:{shouldCreateUser:true}});
-    S.login.busy=false;if(error){S.login.err=/rate|seconds/i.test(error.message)?'انتظري دقيقة ثم أعيدي المحاولة.':'تعذّر إرسال الرمز. تأكدي من الإيميل وحاولي مجددًا.'}else S.login.step='code';render();return}
+    S.login.busy=false;if(error){const m=String(error.message||'');S.login.err=/rate|seconds/i.test(m)?'انتظري دقيقة ثم أعيدي المحاولة.'
+      :/sending|smtp|email/i.test(m)?'تعذّر إرسال الإيميل من الخادم (إعداد البريد في Supabase). أخبري أستاذتك.'
+      :/signup|sign up|not allowed/i.test(m)?'التسجيل غير مفعّل حاليًا. أخبري أستاذتك.':'تعذّر إرسال الرمز. حاولي مجددًا.';S.login.detail=m+(error.status?' ('+error.status+')':'')}else{S.login.step='code';S.login.detail=''}render();return}
   if(a==='lBack'){S.login.step='email';S.login.err='';render();return}
   if(a==='lVerify'){const code=toEn(($('lc')||{}).value||'').replace(/\D/g,'');if(code.length<6){S.login.err='اكتبي الرمز كاملًا';render();return}
     S.login.busy=true;S.login.err='';render();
