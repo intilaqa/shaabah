@@ -278,7 +278,7 @@ const lateDays=()=>+(S.settings.excuseDays||7);
 function isLate(e){return (new Date(e.created_at)-pd(e.lecture_date))/864e5>lateDays()+1}
 function replyFor(e){const{c,m}=lectureOf(e);const when=fD.format(pd(e.lecture_date))+(m?' '+t12(m.start):'');
   const first=e.student_name.split(' ')[0],kw={'مرضي':'سلامتك ما تشوفين شر، الله يشفيك ويعافيك.','وفاة':'أحسن الله عزاءك وغفر لميّتك.','ظرف عائلي':'الله ييسّر أمرك.','موعد رسمي':'الله يوفقك.'}[e.kind]||'';
-  return e.status==='approved'?`أهلًا ${first}${kw?'\n'+kw:''}\nتم اعتماد عذرك عن محاضرة ${c?c.short||c.name:''} يوم ${when}، ولن يُحتسب عليك غيابًا.\nبالتوفيق`
+  return e.status==='approved'?`أهلًا ${first}${kw?'\n'+kw:''}\nتم اعتماد عذرك عن محاضرة ${c?c.short||c.name:''} يوم ${when}، ولن يُحتسب عليك غيابًا.\nبالتوفيق 🤍`
     :`أهلًا ${first}${kw?'\n'+kw:''}\nنعتذر، لم يُعتمد عذرك عن محاضرة ${c?c.short||c.name:''} يوم ${when}.${e.reason?'\nالسبب: '+e.reason:''}\nإذا عندك ما يوضح وضعك، راسليني من صفحة شعبتي.`}
 window.vExc=function(stats){
   if(!configured())return `<div class="card empty"><b>استقبال الأعذار يحتاج الربط بالإنترنت</b>بعد إضافة بيانات Supabase في ملف config.js، سجّلي دخولك من «الإعداد».<br><br><button class="btn pri" data-act="tab" data-tab="manage">الإعداد</button></div>`;

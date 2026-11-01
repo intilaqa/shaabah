@@ -137,7 +137,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٣٧</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٣٨</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -159,8 +159,8 @@ window.TICON={
 };
 
 const DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-const KWORD={'مرضي':'سلامتك، ما تشوفين شر. الله يشفيك ويعافيك','وفاة':'أحسن الله عزاءك وغفر لميّتك، وألهمكم الصبر والسلوان','ظرف عائلي':'الله ييسّر أمرك ويجعل العواقب خير','موعد رسمي':'الله يوفقك ويقضي حاجتك','أخرى':'الله يسهّل عليك، وإن شاء الله كل شي بخير'};
-const ATTWORD=a=>a.level>=3?'لا تيأسين، تواصلي مع أستاذتك وراجعي وضعك معها':a.level===2?'باقي لك فرصة، حافظي على حضورك من اليوم':a.level===1||a.cut?'انتبهي لحضورك، كل محاضرة تفرق':+a.att_pct>=95?'ما شاء الله، التزامك رائع':'أحسنتِ، استمري على هذا الالتزام';
+const KWORD={'مرضي':'سلامتك، ما تشوفين شر. الله يشفيك ويعافيك 🤍','وفاة':'أحسن الله عزاءك وغفر لميّتك، وألهمكم الصبر والسلوان 🤍','ظرف عائلي':'الله ييسّر أمرك ويجعل العواقب خير 🤍','موعد رسمي':'الله يوفقك ويقضي حاجتك','أخرى':'الله يسهّل عليك، وإن شاء الله كل شي بخير'};
+const ATTWORD=a=>a.level>=3?'لا تيأسين، تواصلي مع أستاذتك وراجعي وضعك معها 🤍':a.level===2?'باقي لك فرصة، حافظي على حضورك من اليوم':a.level===1||a.cut?'انتبهي لحضورك، كل محاضرة تفرق':+a.att_pct>=95?'ما شاء الله، التزامك رائع':'أحسنتِ، استمري على هذا الالتزام';
 const KINDS=[['🤒','مرضي'],['🖤','وفاة'],['🏠','ظرف عائلي'],['📄','موعد رسمي'],['✏️','أخرى']];
 const STEPS=['welcome','who','sec','lec','kind','text','review'];
 const $=id=>document.getElementById(id);
@@ -383,7 +383,7 @@ function gradesView(){
 function mineView(){
   if(!S.mine.length)return '';
   const st={pending:['','بانتظار الأستاذة','l1'],approved:['','معتمد','ok'],rejected:['','لم يُعتمد','l3']};
-  const sw={pending:'',approved:'الله يعطيك العافية',rejected:'لا تشيلين هم، تقدرين تراسلين أستاذتك وتوضحين لها'};
+  const sw={pending:'',approved:'الله يعطيك العافية',rejected:'لا تشيلين هم، تقدرين تراسلين أستاذتك وتوضحين لها 🤍'};
   return `<div><p class="sub" style="font-weight:600;margin-bottom:6px">أعذاري</p><div class="wk">${S.mine.slice(0,5).map(e=>{const x=(S.sections||[]).find(z=>z.id===e.section_id),k=st[e.status]||st.pending;
     return `<div style="grid-template-columns:1fr auto;align-items:start"><span>${esc(x?x.short||x.name:'')} · <span class="num">${esc(fD.format(pd(e.lecture_date)))}</span>${e.reason?`<small class="sub" style="display:block">السبب: ${esc(e.reason)}</small>`:''}${sw[e.status]?`<small class="sub" style="display:block">${sw[e.status]}</small>`:''}</span><span class="lvl ${k[2]}">${k[1]}</span></div>`}).join('')}</div></div>`;
 }
