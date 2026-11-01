@@ -214,8 +214,9 @@ function vMsgs(){
     <div class="chat">${t.list.map(m=>`<div class="bub ${m.from_teacher?'me':''}"><p>${esc(m.body)}</p><small class="num">${esc(fM.format(new Date(m.created_at)))}${m.from_teacher&&String(m.id).startsWith('tmp-')?' · بانتظار الإرسال':''}</small></div>`).join('')}</div>
     <div class="card form"><div class="f"><label for="mr">ردّك</label><textarea id="mr" maxlength="1000" style="min-height:80px" placeholder="اكتبي ردّك…"></textarea></div>
     <div><button class="btn pri" data-act="mSend">إرسال</button></div></div>`}
-  if(!T.length)return `<div class="card empty"><b>لا رسائل بعد</b>تظهر هنا رسائل طالبات شعبك. تراسلك الطالبة من تبويب «رسائل» في صفحتها.</div>`;
-  return `<div class="alerts">${T.map(t=>{const c=cById(t.section_id);return `<button class="card al ${t.unread?'l1':''}" style="text-align:start;width:100%" data-act="mOpen" data-k="${esc(t.k)}"><span class="stripe" ${t.unread?'':'style="background:var(--line)"'}></span><div class="body">
+  const bc=`<button class="btn pri" style="width:100%" data-act="annNew">📢 رسالة لكل الطالبات (إعلان)</button>`;
+  if(!T.length)return bc+`<div class="card empty"><b>لا رسائل بعد</b>تظهر هنا رسائل طالبات شعبك. تراسلك الطالبة من تبويب «رسائل» في صفحتها.</div>`;
+  return bc+`<div class="alerts">${T.map(t=>{const c=cById(t.section_id);return `<button class="card al ${t.unread?'l1':''}" style="text-align:start;width:100%" data-act="mOpen" data-k="${esc(t.k)}"><span class="stripe" ${t.unread?'':'style="background:var(--line)"'}></span><div class="body">
     <div class="top1"><div><div class="name">${esc(t.name||t.uid)}</div><div class="cls num">${esc(c?c.short||c.name:'')} · ${esc(t.uid)}</div></div>${t.unread?`<span class="pill new num">${t.unread} جديدة</span>`:''}</div>
     <div class="hint" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.last.from_teacher?'أنتِ: ':''}${esc(t.last.body)}</div><small class="hint num">${esc(fM.format(new Date(t.last.created_at)))}</small></div></button>`}).join('')}</div>`;
 }
@@ -259,7 +260,7 @@ window.vExc=function(stats){
   if(C.exView==='msg')return `<section class="sec">${sw}${vMsgs()}</section>`;
   const cnt=k=>C.ex.filter(e=>e.status===k).length;const f=C.exFilter;
   const today=ymd(new Date()),act=C.ann.filter(a=>!a.until||a.until>=today);
-  let h=`<section class="sec">${sw}</section><section class="sec"><div class="sec-h"><h2>إعلانات للطالبات</h2><button class="lnk" data-act="annToggle">${C.annOpen?'إغلاق':'+ إعلان جديد'}</button></div>
+  let h=`<section class="sec">${sw}</section><section class="sec"><div class="sec-h"><h2>📢 رسالة لكل الطالبات (إعلانات)</h2><button class="lnk" data-act="annToggle">${C.annOpen?'إغلاق':'+ إعلان جديد'}</button></div>
   ${C.annOpen?`<div class="card form"><div class="f"><label for="anb">نص الإعلان</label><textarea id="anb" maxlength="500" placeholder="مثال: محاضرة الأحد ستكون في قاعة SH-BF-04 بدل القاعة المعتادة"></textarea></div>
     <div class="setgrid"><div class="f"><label for="ans">لمن؟</label><select id="ans"><option value="">كل الشعب</option>${secs().map(c=>`<option value="${esc(c.id)}">${esc(c.short||c.name)}</option>`).join('')}</select></div>
     <div class="f"><label for="anu">يظهر حتى</label><input id="anu" type="date" value="${ymd(new Date(Date.now()+7*864e5))}"></div></div>
@@ -367,6 +368,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
 document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-act]');if(!t)return;const a=t.dataset.act;
   switch(a){
   case 'exView':C.exView=t.dataset.v;C.thread=null;render();break;
+  case 'annNew':C.exView='exc';C.thread=null;C.annOpen=true;render();window.scrollTo(0,0);setTimeout(()=>{const a=document.getElementById('anb');a&&a.focus()},50);break;
   case 'exGoMsg':S.tab='exc';C.exView='msg';C.thread=null;render();window.scrollTo(0,0);break;
   case 'mOpen':{C.thread=t.dataset.k;render();window.scrollTo(0,0);const th=threads().find(x=>x.k===C.thread);if(th)markRead(th);break}
   case 'mBack':C.thread=null;render();break;
