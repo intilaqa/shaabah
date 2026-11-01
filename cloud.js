@@ -317,7 +317,7 @@ vManage=function(){let h=_vManage();
   if(!window.supabase)box=`<p class="rule">مكتبة الربط لم تُحمّل بعد. افتحي التطبيق مرة وأنتِ متصلة بالإنترنت.</p>`;
   else if(!CFG.url||!CFG.key)box=`<p class="rule">أضيفي رابط مشروع Supabase ومفتاح anon في ملف <b>config.js</b> على GitHub، ثم أعيدي فتح التطبيق.</p>`;
   else if(!C.user)box=`<p class="hint">${C.authMode==='up'?'أنشئي حسابك مرة واحدة. سيصلك بريد تأكيد، اضغطي الرابط فيه ثم ارجعي وسجّلي الدخول.':'سجّلي دخولك لتتزامن بياناتك وتصلك الأعذار.'}</p>
-    <div class="setgrid"><div class="f"><label for="ce">البريد الإلكتروني</label><input id="ce" type="email" autocomplete="email" dir="ltr"></div><div class="f"><label for="cp">كلمة المرور</label><input id="cp" type="password" autocomplete="${C.authMode==='up'?'new-password':'current-password'}" dir="ltr"></div></div>
+    <div class="setgrid"><div class="f"><label for="ce">البريد الإلكتروني</label><input id="ce" name="username" type="email" autocomplete="username" dir="ltr"></div><div class="f"><label for="cp">كلمة المرور</label><input id="cp" type="password" autocomplete="${C.authMode==='up'?'new-password':'current-password'}" dir="ltr"></div></div>
     <div class="inline"><button class="btn pri" data-act="cAuth">${C.authMode==='up'?'إنشاء الحساب':'تسجيل الدخول'}</button><button class="lnk" data-act="cMode">${C.authMode==='up'?'عندي حساب':'أول مرة؟ أنشئي حسابًا'}</button></div>`;
   else box=`<div class="state"><span>${C.owner?'✅ مرتبطة':C.status==='notowner'?'⚠️ هذا الحساب ليس حساب أستاذة':'…'} <span class="hint" dir="ltr">${esc(C.user.email||'')}</span></span><button class="lnk mut" data-act="cOut">تسجيل الخروج</button></div>
     <div class="facts num"><span>الحالة: <b>${{ok:'متزامن',syncing:'جارٍ المزامنة',offline:'بدون اتصال',error:'خطأ',notowner:'غير مصرّح'}[C.status]||'—'}</b></span><span>بانتظار الرفع: <b>${C.pending.size+C.q.length}</b></span></div>
@@ -351,23 +351,23 @@ function gate(){
   el.innerHTML=`<div class="role-in"><span class="role-mark"><i></i></span>
     <h1>${up?'إنشاء حساب أستاذة':'دخول الأستاذة'}</h1>
     <p>${up?'حساب واحد لكل أستاذة. شعبك وطالباتك وأعذارهن خاصة بك وحدك.':'ادخلي بحسابك لتظهر شعبك وبياناتك على هذا الجهاز.'}</p>
-    <div class="card form" style="width:100%;text-align:start">
-      <div class="f"><label for="ge">البريد الإلكتروني</label><input id="ge" type="email" dir="ltr" autocomplete="email"></div>
-      <div class="f"><label for="gp">كلمة المرور</label><input id="gp" type="password" dir="ltr" autocomplete="${up?'new-password':'current-password'}"></div>
+    <form class="card form" style="width:100%;text-align:start" onsubmit="return false" autocomplete="on">
+      <div class="f"><label for="ge">البريد الإلكتروني</label><input id="ge" name="username" type="email" dir="ltr" autocomplete="username"></div>
+      <div class="f"><label for="gp">كلمة المرور</label><input id="gp" name="password" type="password" dir="ltr" autocomplete="${up?'new-password':'current-password'}"></div>
       ${C.err?`<div class="banner err" style="margin:0">${esc(C.err)}</div>`:''}
       ${!online()?'<div class="banner warn" style="margin:0">لا يوجد اتصال. الدخول أول مرة يحتاج الإنترنت.</div>':''}
-      <button class="btn pri lg" data-act="gAuth"${C.authBusy?' disabled':''}>${C.authBusy?'لحظة…':up?'إنشاء الحساب':'دخول'}</button>
-      <div class="state"><button class="lnk" data-act="cMode">${up?'عندي حساب — دخول':'أستاذة جديدة؟ أنشئي حسابًا'}</button>${up?'':'<button class="lnk mut" data-act="gReset">نسيت كلمة المرور</button>'}</div>
-    </div>
-    <button class="lnk mut" data-role-switch>أنا طالبة</button></div>`;
+      <button type="submit" class="btn pri lg" data-act="gAuth"${C.authBusy?' disabled':''}>${C.authBusy?'لحظة…':up?'إنشاء الحساب':'دخول'}</button>
+      <div class="state"><button type="button" class="lnk" data-act="cMode">${up?'عندي حساب — دخول':'أستاذة جديدة؟ أنشئي حسابًا'}</button>${up?'':'<button type="button" class="lnk mut" data-act="gReset">نسيت كلمة المرور</button>'}</div>
+    </form>
+    <button type="button" class="btn" data-act="gBack">→ رجوع للبداية</button></div>`;
 }
 const _render=render;render=function(){_render();gate()};
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='gp'){const b=document.querySelector('[data-act="gAuth"]');b&&b.click()}});
 
 /* ---- actions ---- */
 document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-act]');if(!t)return;const a=t.dataset.act;
   switch(a){
   case 'exView':C.exView=t.dataset.v;C.thread=null;render();break;
+  case 'gBack':{try{localStorage.removeItem('reg.role')}catch(_){}C.err='';const rb=document.getElementById('role');if(rb)rb.hidden=false;break}
   case 'annNew':C.exView='exc';C.thread=null;C.annOpen=true;render();window.scrollTo(0,0);setTimeout(()=>{const a=document.getElementById('anb');a&&a.focus()},50);break;
   case 'exGoMsg':S.tab='exc';C.exView='msg';C.thread=null;render();window.scrollTo(0,0);break;
   case 'mOpen':{C.thread=t.dataset.k;render();window.scrollTo(0,0);const th=threads().find(x=>x.k===C.thread);if(th)markRead(th);break}

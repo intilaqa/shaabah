@@ -81,9 +81,11 @@ button{cursor:pointer}
 .net i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .net.off i{background:var(--warn)}
 .tabs{display:grid;grid-template-columns:repeat(6,1fr)}
-.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 0 9px;font-weight:600;color:var(--muted);font-size:.78rem;position:relative;white-space:nowrap}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:6px 0 7px;font-weight:600;color:var(--muted);font-size:.74rem;position:relative;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:1px}
+.tabs .ic{font-size:1.05rem;line-height:1.2;filter:grayscale(1);opacity:.7}
+.tabs button[aria-selected="true"] .ic{filter:none;opacity:1}
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
-.tabs .dot{position:absolute;top:3px;inset-inline-end:2px;min-width:17px;height:17px;border-radius:9px;background:var(--deny);color:var(--surface);font-size:.68rem;line-height:17px;padding:0 4px}
+.tabs .dot{position:absolute;top:2px;inset-inline-start:calc(50% + 6px);min-width:17px;height:17px;border-radius:9px;background:var(--deny);color:var(--surface);font-size:.68rem;line-height:17px;padding:0 4px}
 
 .credit{display:flex;flex-direction:column;align-items:center;gap:8px;padding-block:4px 120px;text-align:center}
 .credit .cr-line{width:42px;height:3px;border-radius:2px;background:var(--accent);opacity:.6}
@@ -317,7 +319,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 .impcard.off{opacity:.55}
 .preview{font-size:.82rem;background:var(--ok-soft);border-radius:10px;padding:8px 10px}
 
-.role{position:fixed;inset:0;z-index:60;overflow:auto;background:linear-gradient(160deg,var(--sky-morning-1),var(--sky-morning-2) 60%,var(--bg));display:flex;align-items:center;justify-content:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.role{position:fixed;inset:0;z-index:60;}#role{z-index:70}.role{overflow:auto;background:linear-gradient(160deg,var(--sky-morning-1),var(--sky-morning-2) 60%,var(--bg));display:flex;align-items:center;justify-content:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px))}
 .role-in{width:100%;max-width:440px;display:flex;flex-direction:column;gap:12px;text-align:center;align-items:center}
 .role-mark{width:56px;height:56px;border-radius:16px;background:var(--accent);display:grid;place-items:center}
 .role-mark i{width:20px;height:20px;border-radius:5px;background:var(--surface);transform:rotate(45deg)}
@@ -349,17 +351,17 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 <header class="top"><div class="wrap">
   <div class="bar"><p class="brand"><i></i>سجل الحضور</p><div class="sum" id="sum"></div></div>
   <nav class="tabs" role="tablist">
-    <button role="tab" data-tab="home" aria-selected="true">الرئيسية</button>
-    <button role="tab" data-tab="take" aria-selected="false">التحضير</button>
-    <button role="tab" data-tab="reg" aria-selected="false">السجلات</button>
-    <button role="tab" data-tab="alerts" aria-selected="false">التنبيهات</button>
-    <button role="tab" data-tab="exc" aria-selected="false">الأعذار</button>
-    <button role="tab" data-tab="manage" aria-selected="false">الإعداد</button>
+    <button role="tab" data-tab="home" aria-selected="true"><span class="ic">🏠</span>الرئيسية</button>
+    <button role="tab" data-tab="take" aria-selected="false"><span class="ic">✅</span>التحضير</button>
+    <button role="tab" data-tab="reg" aria-selected="false"><span class="ic">📋</span>السجلات</button>
+    <button role="tab" data-tab="alerts" aria-selected="false"><span class="ic">🔔</span>التنبيهات</button>
+    <button role="tab" data-tab="exc" aria-selected="false"><span class="ic">💬</span>التواصل</button>
+    <button role="tab" data-tab="manage" aria-selected="false"><span class="ic">⚙️</span>الإعداد</button>
   </nav>
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٧</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><p style="font-size:.7rem;opacity:.6">الإصدار ١٨</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -371,7 +373,8 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
   const q=new URLSearchParams(location.search).get('role');if(q==='t'||q==='s')put(q);
   /* a device that holds a teacher's account/data never auto-jumps to the student page */
   const teacherHere=(()=>{try{return !!(localStorage.getItem('reg.auth')||localStorage.getItem('reg.cloud.uid')||localStorage.getItem('reg.db.v1'))}catch(e){return false}})();
-  let r=get();if(r==='s'&&teacherHere&&q!=='s'){put('t');r='t'}
+  const signedIn=(()=>{try{return !!localStorage.getItem('reg.auth')}catch(e){return false}})();
+  let r=get();if(signedIn){put('t');r='t'}else if(r==='s'&&teacherHere&&q!=='s'){put(null);r=null}
   if(r==='s'){location.replace('excuse.html');return}
   const box=document.getElementById('role');if(!r)box.hidden=false;
   document.addEventListener('click',e=>{
@@ -806,7 +809,7 @@ function vManage(){
     ${S.canWrite?'<div><button class="btn sm" data-act="saveProf">حفظ</button></div>':''}</div></section>`;
   h+=`<section class="sec"><h2>الفصل الدراسي</h2><div class="card form">
     ${S.settings.terms.length>1?`<div class="f"><label for="tsel">الفصل المعروض</label><select id="tsel" data-chg="term">${S.settings.terms.map(x=>`<option value="${esc(x.id)}"${t&&x.id===t.id?' selected':''}>${esc(x.name)}</option>`).join('')}</select></div>`:''}
-    <div class="setgrid"><div class="f"><label for="tn">اسم الفصل</label><input id="tn" value="${esc(t&&!GENERIC_TERM.test(t.name||'')?t.name:'')}" placeholder="${esc(termGuess(t&&t.start?pd(t.start):new Date()))} (يُكتب تلقائيًا)"${ro}></div>
+    <div class="setgrid"><div class="f"><label for="tn">اسم الفصل</label><input id="tn" autocomplete="off" name="term-name" value="${esc(t&&!GENERIC_TERM.test(t.name||'')?t.name:'')}" placeholder="${esc(termGuess(t&&t.start?pd(t.start):new Date()))} (يُكتب تلقائيًا)"${ro}></div>
     <div class="f"><label for="ts">تاريخ أول أسبوع دراسي</label><input id="ts" type="date" value="${t?t.start:''}"${ro}></div>
     <div class="f"><label for="tw">عدد أسابيع الدراسة</label><input id="tw" type="number" min="1" max="30" value="${t?t.weeks:15}"${ro}></div></div>
     ${S.canWrite?`<div class="inline"><button class="btn pri" data-act="saveTerm">${t?'حفظ':'إنشاء الفصل'}</button>${t?`<button class="btn ${S.armed==='newterm'?'danger armed':''}" data-act="newTerm">${S.armed==='newterm'?'تأكيد: بدء فصل جديد':'فصل دراسي جديد'}</button>`:''}</div>`:''}
