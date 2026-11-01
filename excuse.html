@@ -137,7 +137,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٣٤</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٣٥</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -159,6 +159,8 @@ window.TICON={
 };
 
 const DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const KWORD={'مرضي':'سلامتك، ما تشوفين شر. الله يشفيك ويعافيك 🤍','وفاة':'أحسن الله عزاءك وغفر لميّتك، وألهمكم الصبر والسلوان 🤍','ظرف عائلي':'الله ييسّر أمرك ويجعل العواقب خير 🤍','موعد رسمي':'الله يوفقك ويقضي حاجتك 🌿','أخرى':'الله يسهّل عليك، وإن شاء الله كل شي بخير 🌿'};
+const ATTWORD=a=>a.level>=3?'لا تيأسين، تواصلي مع أستاذتك وراجعي وضعك معها 🤍':a.level===2?'باقي لك فرصة، حافظي على حضورك من اليوم 💪':a.level===1||a.cut?'انتبهي لحضورك، كل محاضرة تفرق 🌿':+a.att_pct>=95?'ما شاء الله، التزامك رائع 🌟':'أحسنتِ، استمري على هذا الالتزام 🌿';
 const KINDS=[['🤒','مرضي'],['🖤','وفاة'],['🏠','ظرف عائلي'],['📄','موعد رسمي'],['✏️','أخرى']];
 const STEPS=['welcome','who','sec','lec','kind','text','review'];
 const $=id=>document.getElementById(id);
@@ -327,7 +329,7 @@ function attCards(full){
     const items=full&&Array.isArray(a.items)&&a.items.length?`<div class="gitems num">${a.items.slice(-12).reverse().map(i=>`<span>${esc(fD.format(pd(i.d)))} · ${i.m==='a'?'غياب':i.m==='e'?'بعذر':'تأخير'}</span>`).join('')}</div>`:'';
     return `<div class="attc ${a.level?'l'+Math.min(3,a.level):''}"><div class="top"><span><b>${esc(x?x.short||x.name:'مقرر')}</b> <span class="lvl ${lv[1]}">${a.cut&&!a.level?'انقطاع':lv[0]}</span></span><span class="pct num">${pct}%</span></div>
       <div class="meter"><i style="width:${pct}%;background:${a.level>=3?'var(--deny)':a.level?'#c98a1a':'var(--ok)'}"></i><s style="inset-inline-start:${+a.min_attend||75}%"></s></div>
-      <small class="sub num">غياب ${esc(a.abs_h)} من ${esc(a.planned)} ساعة · ${a.level>=3?'<b style="color:var(--deny)">تجاوزتِ الحد المسموح</b>':`متبقٍ قبل الحرمان <b>${esc(a.left_h)}</b> ساعة`} · الحد الأدنى ${esc(a.min_attend||75)}%</small>${items}</div>`}).join('');
+      <small class="sub num">غياب ${esc(a.abs_h)} من ${esc(a.planned)} ساعة · ${a.level>=3?'<b style="color:var(--deny)">تجاوزتِ الحد المسموح</b>':`متبقٍ قبل الحرمان <b>${esc(a.left_h)}</b> ساعة`} · الحد الأدنى ${esc(a.min_attend||75)}%</small><small style="color:var(--accent);font-weight:600">${esc(ATTWORD(a))}</small>${items}</div>`}).join('');
 }
 function warnBanner(){
   const w=S.att.filter(a=>a.level>=1||a.cut).sort((a,b)=>b.level-a.level)[0];if(!w)return '';
@@ -380,9 +382,10 @@ function gradesView(){
 }
 function mineView(){
   if(!S.mine.length)return '';
-  const st={pending:['⏳','بانتظار الأستاذة',''],approved:['✅','معتمد','ok'],rejected:['❌','مرفوض','cx']};
+  const st={pending:['⏳','بانتظار الأستاذة',''],approved:['✅','معتمد','ok'],rejected:['❌','لم يُعتمد','cx']};
+  const sw={pending:'',approved:'الله يعطيك العافية 🌿',rejected:'لا تشيلين هم، تقدرين تراسلين أستاذتك وتوضحين لها 🤍'};
   return `<div><p class="sub" style="font-weight:600;margin-bottom:6px">أعذاري</p><div class="wk">${S.mine.slice(0,5).map(e=>{const x=(S.sections||[]).find(z=>z.id===e.section_id),k=st[e.status]||st.pending;
-    return `<div style="grid-template-columns:auto 1fr"><b>${k[0]}</b><span>${esc(x?x.short||x.name:'')} · <span class="num">${esc(fD.format(pd(e.lecture_date)))}</span> — <b>${k[1]}</b>${e.reason?`<small class="sub" style="display:block">${esc(e.reason)}</small>`:''}</span></div>`}).join('')}</div></div>`;
+    return `<div style="grid-template-columns:auto 1fr"><b>${k[0]}</b><span>${esc(x?x.short||x.name:'')} · <span class="num">${esc(fD.format(pd(e.lecture_date)))}</span> — <b>${k[1]}</b>${e.reason?`<small class="sub" style="display:block">السبب: ${esc(e.reason)}</small>`:''}${sw[e.status]?`<small class="sub" style="display:block">${sw[e.status]}</small>`:''}</span></div>`}).join('')}</div></div>`;
 }
 function portal(){
   if(!S.user)return loginView();
@@ -442,13 +445,13 @@ function render(){
   const s=STEPS[S.i],v=$('view');
   $('bar').style.width=(S.ref?100:Math.round(S.i/(STEPS.length-1)*100))+'%';
   $('step').textContent=S.ref||S.i===0?'':`${S.i} من ${STEPS.length-1}`;
-  if(S.ref){v.innerHTML=`<section class="card done">${S.saved?'<div class="okmark wait" aria-hidden="true"><svg viewBox="0 0 48 48" width="40" height="40"><path d="M24 14v11l7 4" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h1>حُفظ عذرك</h1><p class="sub">ما فيه اتصال الآن، فحفظناه على جوالك وسيُرسل لأستاذتك تلقائيًا أول ما يرجع النت. لا تحذفي الصفحة.</p>':'<div class="okmark" aria-hidden="true"><svg viewBox="0 0 48 48" width="40" height="40"><path d="M14 25l7 7 14-15" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h1>وصل عذرك</h1><p class="sub">شكرًا لك، وستتم مراجعته قريبًا بإذن الله.</p>'}<span class="sub">رقم الطلب</span><span class="ref">${esc(S.ref)}</span><p class="sub">احتفظي به إذا احتجتِ تتابعين مع أستاذتك.</p><div class="row2" style="justify-content:center"><button class="btn" data-a="home">العودة</button><button class="btn ghost" data-a="again">إرسال عذر آخر</button></div></section>`;return}
+  if(S.ref){v.innerHTML=`<section class="card done">${S.saved?'<div class="okmark wait" aria-hidden="true"><svg viewBox="0 0 48 48" width="40" height="40"><path d="M24 14v11l7 4" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h1>حُفظ عذرك</h1><p class="sub">ما فيه اتصال الآن، فحفظناه على جوالك وسيُرسل لأستاذتك تلقائيًا أول ما يرجع النت. لا تحذفي الصفحة.</p>':'<div class="okmark" aria-hidden="true"><svg viewBox="0 0 48 48" width="40" height="40"><path d="M14 25l7 7 14-15" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h1>وصل عذرك</h1><p class="sub">ستراجعه أستاذتك قريبًا بإذن الله.</p>'}${S.doneKind&&KWORD[S.doneKind]?`<div class="ann" style="text-align:center">${esc(KWORD[S.doneKind])}</div>`:''}<span class="sub">رقم الطلب</span><span class="ref">${esc(S.ref)}</span><p class="sub">احتفظي به إذا احتجتِ تتابعين مع أستاذتك.</p><div class="row2" style="justify-content:center"><button class="btn" data-a="home">العودة</button><button class="btn ghost" data-a="again">إرسال عذر آخر</button></div></section>`;return}
   let h='';
   if(s==='welcome')h=`<h1>عندك عذر؟<br>أرسليه في دقيقة 🌿</h1><p class="sub">بدون تحميل ولا تسجيل دخول. اكتبي عذرك، وإذا عندك ما يثبته صوّريه وأرفقيه.</p>${S.err?`<div class="err">${esc(S.err)}</div>`:''}<div class="nav"><span></span><button class="btn" data-a="next"${S.sections===null?' disabled':''}>${S.sections===null?'<span class="spin"></span>لحظة…':'ابدئي'}</button></div>`;
   else if(s==='who')h=`<h2>عرّفينا بنفسك</h2><div class="f"><label for="n">الاسم الكامل</label><input id="n" data-k="name" value="${esc(S.name)}" autocomplete="name" placeholder="الاسم الثلاثي"></div><div class="f"><label>الرقم الجامعي (من إيميلك)</label><input value="${esc(uidOf(S.uid))}" dir="ltr" disabled></div>`;
   else if(s==='sec'){const pool=S.sections||[];h=`<h2>عن أي شعبة؟</h2>${pool.length?`<div class="chips">${pool.map(x=>`<button class="chip" data-a="sec" data-v="${esc(x.id)}" aria-pressed="${S.sec&&S.sec.id===x.id}"><span>${esc(x.name)}<span class="tc">👩‍🏫 ${esc(tName(x))}</span></span></button>`).join('')}</div>`:`<div class="err">${esc(S.err||'لا توجد شعب متاحة الآن.')}</div>`}`}
   else if(s==='lec'){const L=lectures(S.sec);h=`<h2>أي محاضرة غبتِ عنها؟</h2><p class="sub">${esc(S.sec.short||S.sec.name)} · آخر خمسة أسابيع</p>${L.length?`<div class="chips two">${L.map(l=>{const d=pd(l.date),key=l.date+'|'+l.m.id;return `<button class="chip" data-a="lec" data-v="${key}" aria-pressed="${S.lec&&S.lec.key===key}"><span>${rel(l.k,d)}<small class="num">${esc(fD.format(d))} · ${t12(l.m.start)}</small></span></button>`}).join('')}</div>`:'<div class="err">لا توجد محاضرات سابقة لهذه الشعبة.</div>'}`}
-  else if(s==='kind')h=`<h2>ما نوع العذر؟</h2><div class="chips two">${KINDS.map(([e,t])=>`<button class="chip" data-a="kind" data-v="${t}" aria-pressed="${S.kind===t}"><span class="e">${e}</span><span>${t}</span></button>`).join('')}</div>`;
+  else if(s==='kind')h=`<h2>ما نوع العذر؟</h2><div class="chips two">${KINDS.map(([e,t])=>`<button class="chip" data-a="kind" data-v="${t}" aria-pressed="${S.kind===t}"><span class="e">${e}</span><span>${t}</span></button>`).join('')}</div>${S.kind&&KWORD[S.kind]?`<div class="ann">${esc(KWORD[S.kind])}</div>`:''}`;
   else if(s==='text')h=`<h2>اكتبي عذرك</h2><div class="f"><label for="b">باختصار، ما الذي حدث؟</label><textarea id="b" data-k="body" maxlength="2000" placeholder="مثال: راجعت المستشفى بسبب ارتفاع الحرارة">${esc(S.body)}</textarea></div>
     <div class="att">${S.file?`<span class="e">📎</span><span>${esc(S.fileName)}</span><button class="x" data-a="rmfile">حذف</button>`:`<span class="e">📷</span><span>إرفاق صورة أو ملف <small class="sub">(اختياري)</small></span><input type="file" id="fl" accept="image/*,application/pdf" aria-label="إرفاق صورة أو ملف">`}</div>`;
   else if(s==='review')h=`<h2>راجعي قبل الإرسال</h2><dl class="review"><dt>الاسم</dt><dd>${esc(S.name)}</dd><dt>الرقم</dt><dd class="num">${esc(uidOf(S.uid))}</dd><dt>الشعبة</dt><dd>${esc(S.sec.name)}</dd><dt>المحاضرة</dt><dd class="num">${esc(DAYS[pd(S.lec.date).getDay()]+' '+fD.format(pd(S.lec.date))+' · '+t12(S.lec.m.start))}</dd><dt>النوع</dt><dd>${esc(S.kind)}</dd><dt>العذر</dt><dd>${esc(S.body)}</dd><dt>المرفق</dt><dd>${S.file?'📎 '+esc(S.fileName):'لا يوجد'}</dd></dl>${S.err?`<div class="err">${esc(S.err)}</div>`:''}`;
@@ -518,7 +521,7 @@ async function send(){
   let sent=false;
   if(online()){try{await upload(x);sent=true}catch(e){if(!netErr(e)){S.sending=false;S.err=whyErr(e);render();return}}}
   if(!sent){try{await IDB.put({...x,at:Date.now()});S.queued++;S.saved=true}catch(e){S.sending=false;alertErr('تعذّر الإرسال والحفظ. حاولي مرة أخرى.');return}}
-  S.ref=id.slice(0,6).toUpperCase();S.sending=false;render();if(sent)loadMine();
+  S.doneKind=S.kind;S.ref=id.slice(0,6).toUpperCase();S.sending=false;render();if(sent)loadMine();
 }
 function setUser(u){S.user=u||null;if(u){S.uid=uidOf(u.email);const c=ls.get('exc.cache');if(c&&c.uid&&c.uid!==S.uid){S.sections=null;S.ann=[];S.name=''}const m=ls.get('exc.me')||{};ls.set('exc.me',{...m,uid:S.uid})}render();if(u){loadSections();flushQ();loadMine();loadGrades();loadMsgs();loadAtt();savePush().catch(()=>{})}}
 (async()=>{if(sb){try{const {data}=await sb.auth.getSession();S.user=data&&data.session&&data.session.user||null;if(S.user)S.uid=uidOf(S.user.email)}catch(e){}
