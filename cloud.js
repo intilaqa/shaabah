@@ -331,10 +331,18 @@ async function decide(id,status,reason){
   toast((status==='approved'?'اعتُمد العذر ✓':status==='rejected'?'رُفض العذر':'أُعيد العذر للانتظار')+(online()?'':' — يُرفع عند الاتصال'));C.rejFor=null;render();
 }
 async function openFile(id){const e=C.ex.find(x=>x.id===id);if(!e||!e.file_path)return;
-  const w=window.open('','_blank');
-  const {data,error}=await C.sb.storage.from('excuse-files').createSignedUrl(e.file_path,3600);
-  if(error||!data){w&&w.close();toast('تعذّر فتح المرفق');return}
-  if(w)w.location=data.signedUrl;else location.href=data.signedUrl}
+  if(!online()){toast('عرض المرفق يحتاج اتصالًا');return}
+  toast('أفتح المرفق…',1500);
+  const {data,error}=await C.sb.storage.from('excuse-files').download(e.file_path);
+  if(error||!data){toast('تعذّر فتح المرفق: '+((error&&(error.message||error.error))||'غير موجود'),6000);return}
+  const url=URL.createObjectURL(data),isPdf=/pdf/i.test(data.type)||/\.pdf$/i.test(e.file_path);
+  document.getElementById('fileview')?.remove();
+  const o=document.createElement('div');o.id='fileview';o.className='role';o.style.zIndex=80;
+  o.innerHTML=`<div class="role-in" style="max-width:720px"><h1 style="font-size:1.2rem">مرفق عذر ${esc(e.student_name)}</h1>
+    ${isPdf?`<iframe src="${url}" style="width:100%;height:65vh;border:0;border-radius:14px;background:#fff"></iframe>`:`<img src="${url}" alt="المرفق" style="max-width:100%;max-height:65vh;border-radius:14px;box-shadow:0 10px 30px -18px rgba(0,0,0,.5)">`}
+    <div class="inline" style="justify-content:center"><a class="btn" href="${url}" download="${esc((e.student_name||'مرفق').split(' ')[0])}-عذر.${isPdf?'pdf':'jpg'}">تنزيل</a><button class="btn pri" data-act="fvClose">إغلاق</button></div></div>`;
+  document.body.appendChild(o);
+}
 function studentLink(){return location.href.replace(/[#?].*$/,'').replace(/[^/]*$/,'')+'excuse.html'}
 
 /* ---- settings: connection ---- */
@@ -396,6 +404,7 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   case 'exView':C.exView=t.dataset.v;C.thread=null;render();break;
   case 'gBack':{try{localStorage.removeItem('reg.role')}catch(_){}C.err='';const rb=document.getElementById('role');if(rb)rb.hidden=false;break}
   case 'exQR':showQR();break;
+  case 'fvClose':{const o=document.getElementById('fileview');o&&o.remove();break}
   case 'qrClose':{const o=document.getElementById('qrbox');o&&o.remove();break}
   case 'qrSave':{const cv=document.querySelector('#qrbox canvas');if(!cv)break;cv.toBlob(b=>dl.save({filename:'باركود صفحة الطالبات - شعبتي.png',data:b}).then(()=>toast('نُزّلت صورة الباركود')),'image/png');break}
   case 'annNew':C.exView='exc';C.thread=null;C.annOpen=true;render();window.scrollTo(0,0);setTimeout(()=>{const a=document.getElementById('anb');a&&a.focus()},50);break;

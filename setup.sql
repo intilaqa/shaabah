@@ -358,3 +358,11 @@ create policy "students upload" on storage.objects for insert to authenticated
 drop policy if exists "students read own upload" on storage.objects;
 create policy "students read own upload" on storage.objects for select to authenticated
   using (bucket_id = 'excuse-files' and owner = auth.uid());
+
+-- إصلاح: الأستاذة تفتح مرفقات أعذار شعبها
+create or replace function public.owns_section(sec text) returns boolean language sql stable security definer set search_path=public as
+$$ select exists(select 1 from public.sections_public where id = sec and owner = auth.uid()) $$;
+grant execute on function public.owns_section(text) to authenticated;
+drop policy if exists "teacher reads files" on storage.objects;
+create policy "teacher reads files" on storage.objects for select to authenticated
+  using (bucket_id = 'excuse-files' and public.owns_section((storage.foldername(name))[1]));
