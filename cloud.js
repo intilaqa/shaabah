@@ -41,7 +41,7 @@ async function afterLogin(){
   const prev=lsGet('reg.cloud.uid');
   if(prev&&prev!==C.user.id){
     if(C.pending.size||Object.keys(S.outbox).length){C.err='على هذا الجهاز بيانات حساب آخر لم تُرفع بعد. سجّلي دخول الحساب السابق أولًا حتى تُرفع.';C.owner=false;C.status='error';await C.sb.auth.signOut();render();return}
-    LDB.load({});C.lastPull='';lsSet('reg.cloud.lastPull','');C.ex=[];C.exLoaded=false;C.ann=[];C.q=[];saveQ();S.sheet=null}
+    LDB.load({});lsSet('reg.attpub',{});C.lastPull='';lsSet('reg.cloud.lastPull','');C.ex=[];C.exLoaded=false;C.ann=[];C.q=[];saveQ();S.sheet=null}
   lsSet('reg.cloud.uid',C.user.id);C.owner=true;
   if(!online()){C.status='offline';render();return}
   try{if(!C.lastPull){const {count,error}=await C.sb.from('docs').select('path',{count:'exact',head:true});if(error)throw error;
@@ -79,6 +79,7 @@ async function publishSections(){
     cancelled:A.filter(d=>d.classId===c.id&&d.cancelled&&d.date>=since).map(d=>({date:d.date,meeting_id:d.meetingId,reason:d.reason||''}))}));
   if(rows.length){const {error}=await C.sb.from('sections_public').upsert(rows);if(error)throw error}
   await publishRoster(list);
+  await publishAttendance(list);
   const ids=list.map(c=>c.id);const {data}=await C.sb.from('sections_public').select('id').eq('owner',C.user.id);
   const gone=(data||[]).map(r=>r.id).filter(id=>!ids.includes(id));if(gone.length)await C.sb.from('sections_public').delete().eq('owner',C.user.id).in('id',gone);
 }
@@ -92,6 +93,19 @@ async function publishRoster(list){
   for(let i=0;i<up.length;i+=500){const {error}=await C.sb.from('roster').upsert(up.slice(i,i+500),{onConflict:'section_id,uid'});if(error)throw error}
   const gone=new Map();for(const k of hk.keys())if(!want.has(k)){const[sid,u]=k.split('|');if(!gone.has(sid))gone.set(sid,[]);gone.get(sid).push(u)}
   for(const[sid,us]of gone)for(let i=0;i<us.length;i+=200){const {error}=await C.sb.from('roster').delete().eq('owner',me).eq('section_id',sid).in('uid',us.slice(i,i+200));if(error)throw error}
+}
+/* each student's attendance numbers (only she can read her row) */
+async function publishAttendance(list){
+  const me=C.user.id,ids=new Set(list.map(c=>c.id)),st=S.settings,stats=computeStats().filter(x=>ids.has(x.c.id));
+  const prev=lsGet('reg.attpub')||{},next={},rows=[];
+  for(const x of stats){const u=normId(x.s.uid);if(!u)continue;const k=x.c.id+'|'+u;
+    const items=sessOf(x.c.id).filter(d=>!d.cancelled).map(d=>{const m=(d.marks||{})[x.s.id];return m&&m!=='p'?{d:d.date,m,h:+d.hours||0}:null}).filter(Boolean);
+    const row={section_id:x.c.id,uid:u,owner:me,att_pct:x.attPct,abs_h:x.absH,planned:r2(x.planned),max_abs:r2(x.maxAbs),left_h:r2(Math.max(0,x.left)),level:x.level,cut:!!x.cut,min_attend:st.minAttend,items};
+    const sig=JSON.stringify(row);next[k]=sig;if(prev[k]!==sig)rows.push(row)}
+  for(let i=0;i<rows.length;i+=300){const {error}=await C.sb.from('attendance_public').upsert(rows.slice(i,i+300),{onConflict:'section_id,uid'});if(error)throw error}
+  const gone=Object.keys(prev).filter(k=>!(k in next));
+  for(const k of gone){const[sid,u]=k.split('|');await C.sb.from('attendance_public').delete().eq('owner',me).eq('section_id',sid).eq('uid',u)}
+  lsSet('reg.attpub',next);
 }
 /* actions done without internet wait here and are sent in order once online */
 async function flushQ(){
@@ -407,7 +421,7 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   case 'cOut':{if(C.pending.size||C.q.length||Object.keys(S.outbox).length){toast(online()?'لحظة، أرفع بياناتك أولًا ثم اضغطي خروج مرة ثانية':'لا يمكن الخروج الآن: بياناتك لم تُرفع بعد. اتصلي بالإنترنت أولًا.',4500);sync();break}
     if(S.armed!=='out'){S.armed='out';render();toast('اضغطي «تأكيد الخروج» — بياناتك محفوظة في حسابك وتعود عند الدخول',3500);return}S.armed=null;
     await C.sb.auth.signOut();C.owner=false;C.user=null;
-    LDB.load({});C.lastPull='';lsSet('reg.cloud.lastPull','');lsSet('reg.cloud.uid','');C.pending.clear();savePending();
+    LDB.load({});lsSet('reg.attpub',{});C.lastPull='';lsSet('reg.cloud.lastPull','');lsSet('reg.cloud.uid','');C.pending.clear();savePending();
     C.ex=[];C.exLoaded=false;C.ann=[];lsSet('reg.ann',[]);C.q=[];saveQ();C.grades={};S.sheet=null;S.tab='home';C.status='login';
     try{localStorage.removeItem('reg.role')}catch(_){}
     render();window.scrollTo(0,0);const rb=document.getElementById('role');if(rb)rb.hidden=false;toast('تم تسجيل الخروج');break}

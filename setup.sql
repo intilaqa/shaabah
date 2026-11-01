@@ -256,3 +256,85 @@ create policy "send messages" on public.messages for insert to authenticated
 create policy "mark read" on public.messages for update to authenticated
   using ((teacher = auth.uid() and not from_teacher) or (student_user = auth.uid() and from_teacher))
   with check ((teacher = auth.uid() and not from_teacher) or (student_user = auth.uid() and from_teacher));
+
+-- ===== إشعارات الجوال: قبل المحاضرة بـ 15 دقيقة، وعند نشر إعلان =====
+create extension if not exists pg_net;
+create extension if not exists pg_cron;
+
+-- إعدادات خاصة (لا تُقرأ من التطبيق أبدًا)
+create table if not exists public.app_secrets(k text primary key, v text not null);
+alter table public.app_secrets enable row level security;
+
+-- جوالات الطالبات المفعّلة للإشعارات
+create table if not exists public.push_subs(
+  endpoint text primary key,
+  user_id uuid not null default auth.uid(),
+  uid text,
+  sub jsonb not null,
+  created_at timestamptz not null default now());
+create index if not exists push_subs_uid on public.push_subs(uid);
+create or replace function public.push_sub_fill() returns trigger language plpgsql security definer set search_path=public as
+$$ begin
+  if not public.is_student() then raise exception 'students only'; end if;
+  new.user_id := auth.uid(); new.uid := split_part(lower(auth.jwt()->>'email'),'@',1); return new;
+end $$;
+drop trigger if exists push_sub_fill on public.push_subs;
+create trigger push_sub_fill before insert or update on public.push_subs for each row execute function public.push_sub_fill();
+alter table public.push_subs enable row level security;
+drop policy if exists "my push" on public.push_subs;
+create policy "my push" on public.push_subs for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- حتى لا يتكرر إشعار المحاضرة نفسها
+create table if not exists public.push_log(key text primary key, at timestamptz not null default now());
+alter table public.push_log enable row level security;
+
+-- استدعاء خدمة الإرسال
+create or replace function public.notify_call(payload jsonb) returns void language plpgsql security definer set search_path=public as
+$$ declare u text; s text; begin
+  select v into u from public.app_secrets where k = 'notify_url';
+  select v into s from public.app_secrets where k = 'notify_secret';
+  if u is null or s is null then return; end if;
+  perform net.http_post(url := u, body := payload, headers := jsonb_build_object('Content-Type','application/json','x-notify-secret',s));
+end $$;
+revoke execute on function public.notify_call(jsonb) from public, anon, authenticated;
+
+-- إعلان جديد → إشعار
+create or replace function public.ann_notify() returns trigger language plpgsql security definer set search_path=public as
+$$ begin perform public.notify_call(jsonb_build_object('type','announcement','record',to_jsonb(new))); return new; end $$;
+drop trigger if exists ann_notify on public.announcements;
+create trigger ann_notify after insert on public.announcements for each row execute function public.ann_notify();
+
+-- كل 5 دقائق: من عندها محاضرة بعد 15 دقيقة؟
+do $$ begin perform cron.unschedule('lecture-reminders'); exception when others then null; end $$;
+select cron.schedule('lecture-reminders', '*/5 * * * *', $$ select public.notify_call('{"type":"tick"}'::jsonb) $$);
+
+-- ===== حضور كل طالبة (تراه هي فقط) + إشعار عند الإنذار أو الحرمان =====
+create table if not exists public.attendance_public(
+  section_id text not null,
+  uid text not null,
+  owner uuid not null default auth.uid(),
+  att_pct numeric, abs_h numeric, planned numeric, max_abs numeric, left_h numeric,
+  level int not null default 0, cut boolean not null default false,
+  min_attend int, items jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (section_id, uid));
+create index if not exists attendance_public_uid on public.attendance_public(uid);
+drop trigger if exists attendance_touch on public.attendance_public;
+create trigger attendance_touch before insert or update on public.attendance_public for each row execute function public.touch();
+alter table public.attendance_public enable row level security;
+drop policy if exists "student sees own attendance" on public.attendance_public;
+drop policy if exists "my attendance" on public.attendance_public;
+create policy "student sees own attendance" on public.attendance_public for select to authenticated
+  using (public.is_student() and uid = split_part(lower(auth.jwt()->>'email'),'@',1));
+create policy "my attendance" on public.attendance_public for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid() and not public.is_student());
+
+create or replace function public.att_notify() returns trigger language plpgsql security definer set search_path=public as
+$$ begin
+  if new.level > coalesce(case when tg_op='UPDATE' then old.level end,0)
+     or (new.cut and not coalesce(case when tg_op='UPDATE' then old.cut end,false)) then
+    perform public.notify_call(jsonb_build_object('type','warn','record',to_jsonb(new)));
+  end if;
+  return new;
+end $$;
+drop trigger if exists att_notify on public.attendance_public;
+create trigger att_notify after insert or update on public.attendance_public for each row execute function public.att_notify();

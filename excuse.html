@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17707a">
 <title>شعبتي</title>
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest-student.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="شعبتي">
 <link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;600;700&family=Amiri:wght@400;700&display=swap">
@@ -75,7 +75,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
 .wk b{font-weight:700}.wk .rm{background:var(--ink);color:var(--surface);border-radius:6px;padding:0 7px;font-size:.78rem;font-weight:700;direction:ltr}
 .row2{display:flex;gap:8px;flex-wrap:wrap}.ghost{background:var(--bg);color:var(--ink);border:1.5px solid var(--line)}
 .greet h1{font-size:1.55rem;font-weight:700;letter-spacing:0}
-.gname{font-family:"Amiri",serif;font-weight:700;color:var(--accent);font-size:1.15em}.greet p{margin:4px 0 0}
+.gname{font:inherit;color:inherit}.greet p{margin:4px 0 0}
 .wait{font-size:.95rem;color:var(--accent);font-weight:600;margin-top:2px}
 .dh{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:6px}
 .dh .k{font-size:.72rem;font-weight:700;color:var(--accent)}
@@ -100,6 +100,17 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
 .annb{border:2px solid var(--accent);background:var(--accent-soft);border-radius:16px;padding:12px 14px;line-height:1.75;position:relative}
 .annb .nw{display:inline-block;background:var(--deny);color:#fff;border-radius:8px;padding:0 8px;font-size:.72rem;font-weight:700;margin-inline-end:6px}
 .annb small{display:block;color:var(--muted);font-size:.76rem}
+.attc{border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.attc .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.attc .pct{font-size:1.6rem;font-weight:700;direction:ltr}
+.attc.l1{border-color:#c98a1a}.attc.l2{border-color:#c2410c}.attc.l3{border-color:var(--deny)}
+.meter{position:relative;height:10px;border-radius:5px;background:var(--bg);overflow:visible}
+.meter i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:5px;background:var(--ok)}
+.meter s{position:absolute;inset-block:-4px;width:2px;background:var(--deny);text-decoration:none}
+.lvl{display:inline-block;border-radius:999px;padding:1px 10px;font-size:.75rem;font-weight:700}
+.lvl.ok{background:var(--ok-soft);color:var(--ok)}.lvl.l1{background:#fcf0da;color:#9a5800}.lvl.l2{background:#fde7dc;color:#c2410c}.lvl.l3{background:var(--deny-soft);color:var(--deny)}
+.warnb{border-radius:16px;padding:12px 14px;line-height:1.7;background:var(--deny-soft);color:var(--deny);font-weight:600}
+.pushc{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1.5px dashed var(--accent);border-radius:16px;padding:12px 14px;background:var(--accent-soft)}
 .annbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--ink);color:var(--surface);border:0;border-radius:14px;padding:10px 14px;font-weight:700;width:100%;margin-top:10px;text-align:start}
 .chat{display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow:auto;padding:4px 2px}
 .bub{max-width:85%;align-self:flex-end;background:var(--bg);border-radius:16px 16px 16px 4px;padding:8px 12px}
@@ -122,7 +133,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢٢</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢٣</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -147,7 +158,7 @@ const DOMAIN=String(CFG.studentDomain||'albaha.onmicrosoft.com').toLowerCase();
 let sb=null;try{if(CFG.url&&CFG.key&&window.supabase)sb=window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'exc.auth'}})}catch(e){}
 /* signed-in student: her university ID comes from her university email */
 const emailOf=v=>{v=toEn(v).trim().toLowerCase();return v.includes('@')?v:(/^\d{5,12}$/.test(v)?v+'@'+DOMAIN:v)};
-S.tab=ls.get('exc.tab')||'home';S.msgs=ls.get('exc.msgs')||[];S.mthread=null;S.mSending=false;S.grades=ls.get('exc.grades')||[];S.user=null;S.login={step:'email',email:'',busy:false,err:''};S.mine=ls.get('exc.mine')||[];
+S.att=ls.get('exc.att')||[];S.tab=ls.get('exc.tab')||'home';S.msgs=ls.get('exc.msgs')||[];S.mthread=null;S.mSending=false;S.grades=ls.get('exc.grades')||[];S.user=null;S.login={step:'email',email:'',busy:false,err:''};S.mine=ls.get('exc.mine')||[];
 
 /* ---------- my sections: every section (any teacher) whose roster has my university ID ---------- */
 const online=()=>navigator.onLine!==false;
@@ -169,6 +180,7 @@ async function loadSections(){
       const a2=owners.length?await sb.from('announcements').select('*').is('section_id',null).in('owner',owners).order('created_at',{ascending:false}).limit(50):{data:[]};
       ann=[...new Map([...(a1.data||[]),...(a2.data||[])].map(x=>[x.id,x])).values()].sort((x,y)=>x.created_at<y.created_at?1:-1);
     }
+    const known=new Set((S.ann||[]).map(a=>a.id));if(S.at&&ann.some(a=>!known.has(a.id)))chime();
     S.sections=sections;S.ann=ann;S.at=Date.now();S.err='';
     ls.set('exc.cache',{sections,ann,at:S.at,name:S.name,uid:S.uid});
   }catch(e){if(!S.sections){S.err='تعذّر تحميل شعبك، حاولي بعد قليل.';S.sections=[]}}
@@ -194,7 +206,7 @@ async function flushQ(){
   catch(e){}finally{flushing=false;if(S.mode!=='form'||S.ref)render();else netDot()}
 }
 function netDot(){const n=$('net');if(!n)return;n.className='net'+(online()?'':' off');n.lastChild&&n.lastChild.nodeType===3?n.lastChild.textContent=online()?'':' بدون اتصال':n.append(online()?'':' بدون اتصال')}
-window.addEventListener('online',()=>{loadSections();flushQ();loadMine();loadGrades()});
+window.addEventListener('online',()=>{loadSections();flushQ();loadMine();loadGrades();loadAtt()});
 window.addEventListener('offline',()=>{netDot();render()});
 setInterval(()=>{if(S.queued&&online())flushQ()},20000);
 
@@ -275,6 +287,53 @@ function msgsView(){
     return `<button class="thr" data-a="mOpen" data-v="${esc(x.id)}"><b>👩‍🏫 ${esc(tName(x))}</b>${u?`<span class="b" style="position:static;background:var(--deny);color:#fff;border-radius:9px;padding:0 7px;font-size:.75rem">${u} جديد</span>`:'<span></span>'}
       <small>${esc(x.short||x.name)}${last?' · '+(last.from_teacher?'':'أنتِ: ')+esc(last.body):''}</small></button>`}).join('')}</div>`;
 }
+async function loadAtt(){
+  if(!sb||!S.user||!online())return;
+  const {data,error}=await sb.from('attendance_public').select('section_id,att_pct,abs_h,planned,max_abs,left_h,level,cut,min_attend,items,updated_at');
+  if(!error){S.att=data||[];ls.set('exc.att',S.att);if(S.mode!=='form')render()}
+}
+const LVL={0:['منتظمة','ok'],1:['إنذار أول','l1'],2:['إنذار ثانٍ','l2'],3:['حرمان','l3']};
+function attCards(full){
+  if(!S.att.length)return full?'<p class="sub">تظهر نسبة حضورك هنا بعد أول تحضير تسجله أستاذتك.</p>':'';
+  return S.att.map(a=>{const x=(S.sections||[]).find(z=>z.id===a.section_id),lv=LVL[Math.min(3,a.level||0)]||LVL[0],pct=Math.max(0,Math.min(100,+a.att_pct||0));
+    const items=full&&Array.isArray(a.items)&&a.items.length?`<div class="gitems num">${a.items.slice(-12).reverse().map(i=>`<span>${esc(fD.format(pd(i.d)))} · ${i.m==='a'?'غياب':i.m==='e'?'بعذر':'تأخير'}</span>`).join('')}</div>`:'';
+    return `<div class="attc ${a.level?'l'+Math.min(3,a.level):''}"><div class="top"><span><b>${esc(x?x.short||x.name:'مقرر')}</b> <span class="lvl ${lv[1]}">${a.cut&&!a.level?'انقطاع':lv[0]}</span></span><span class="pct num">${pct}%</span></div>
+      <div class="meter"><i style="width:${pct}%;background:${a.level>=3?'var(--deny)':a.level?'#c98a1a':'var(--ok)'}"></i><s style="inset-inline-start:${+a.min_attend||75}%"></s></div>
+      <small class="sub num">غياب ${esc(a.abs_h)} من ${esc(a.planned)} ساعة · ${a.level>=3?'<b style="color:var(--deny)">تجاوزتِ الحد المسموح</b>':`متبقٍ قبل الحرمان <b>${esc(a.left_h)}</b> ساعة`} · الحد الأدنى ${esc(a.min_attend||75)}%</small>${items}</div>`}).join('');
+}
+function warnBanner(){
+  const w=S.att.filter(a=>a.level>=1||a.cut).sort((a,b)=>b.level-a.level)[0];if(!w)return '';
+  const x=(S.sections||[]).find(z=>z.id===w.section_id),n=x?x.short||x.name:'';
+  return `<div class="warnb">${w.level>=3?`⛔ تجاوز غيابك في ${esc(n)} الحد المسموح (نسبة حضورك ${esc(w.att_pct)}%). راجعي أستاذتك.`:`⚠️ ${esc(LVL[w.level]?LVL[w.level][0]:'تنبيه')} في ${esc(n)}: نسبة حضورك ${esc(w.att_pct)}%، ومتبقٍ لك <b class="num">${esc(w.left_h)}</b> ساعة فقط قبل الحرمان.`}</div>`;
+}
+/* ---------- phone notifications ---------- */
+const VAPID=CFG.vapid||'';
+const pushOK=()=>!!(VAPID&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window);
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+const b64u=s=>{const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)))};
+async function savePush(){
+  if(!pushOK()||!S.user||Notification.permission!=='granted')return false;
+  const reg=await navigator.serviceWorker.ready;
+  const sub=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID)});
+  const {error}=await sb.from('push_subs').upsert({endpoint:sub.endpoint,sub:sub.toJSON()},{onConflict:'endpoint'});
+  if(!error)ls.set('exc.push',sub.endpoint);return !error;
+}
+async function enablePush(){
+  if(isIOS&&!standalone){S.err='على الآيفون: اضغطي زر المشاركة ⬆️ ثم «إضافة إلى الشاشة الرئيسية»، وافتحي «شعبتي» من الشاشة الرئيسية ثم فعّلي التنبيهات.';render();return}
+  try{const p=await Notification.requestPermission();if(p!=='granted'){S.err='لم تُفعَّل التنبيهات. يمكنك تفعيلها من إعدادات المتصفح.';render();return}
+    if(await savePush()){S.err='';chime();render()}else{S.err='تعذّر تفعيل التنبيهات، حاولي مرة ثانية.';render()}}
+  catch(e){S.err='تعذّر تفعيل التنبيهات على هذا الجهاز.';render()}
+}
+function pushCard(){
+  if(!pushOK()||!S.user)return '';
+  if(Notification.permission==='granted'&&ls.get('exc.push'))return '';
+  return `<div class="pushc"><span>🔔 فعّلي التنبيهات: قبل المحاضرة بـ 15 دقيقة، وعند الإعلانات، وقبل الحرمان.</span><button class="btn" style="min-width:auto;padding:10px 14px" data-a="push">تفعيل</button></div>`;
+}
+/* the app's own chime, when the page is open */
+function chime(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),t=c.currentTime;
+  [[880,0],[1175,.16],[1568,.32]].forEach(([f,d])=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.45);o.connect(g);g.connect(c.destination);o.start(t+d);o.stop(t+d+.5)});
+  navigator.vibrate&&navigator.vibrate([200,100,200,100,400])}catch(e){}}
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.chime){chime();loadSections();loadAtt()}});
 async function loadGrades(){
   if(!sb||!S.user||!online())return;
   const {data,error}=await sb.from('grades').select('section_id,title,items,total,max,updated_at').order('updated_at',{ascending:false}).limit(200);
@@ -327,17 +386,18 @@ function portal(){
   const qb=S.queued?`<div class="q"><span>📤 ${S.queued===1?'عذر واحد محفوظ':S.queued+' أعذار محفوظة'} على جوالك ويُرسل تلقائيًا عند الاتصال</span>${online()?'<button data-a="flush">إرسال الآن</button>':''}</div>`:'';
   const offN=!online()&&S.at?`<p class="sub" style="font-size:.8rem">بدون اتصال · آخر تحديث ${esc(fD.format(new Date(S.at)))}</p>`:'';
   S.fresh=S.fresh||new Set();const seenA=ls.get('exc.annseen')||[],unseenA=anns.filter(a=>!seenA.includes(a.id)),newA=anns.filter(a=>!seenA.includes(a.id)||S.fresh.has(a.id));
-  const tabs=[['home','🏠','الرئيسية'],['week','🗓️','جدولي'],['grades','📊','درجاتي'],['msg','💬','رسائل'],['exc','📩','أعذاري']];
+  const tabs=[['home','🏠','الرئيسية'],['week','🗓️','جدولي'],['grades','📊','سجلي'],['msg','💬','رسائل'],['exc','📩','أعذاري']];
   const pend=S.mine.filter(e=>e.status!=='pending'&&!(ls.get('exc.seen')||[]).includes(e.id)).length;
-  const bar=`<nav class="stabs" role="tablist">${tabs.map(([k,e,t])=>`<button role="tab" data-a="stab" data-v="${k}" aria-selected="${S.tab===k}"><span>${e}</span>${t}${k==='exc'&&pend?`<i class="b num">${pend}</i>`:''}${k==='msg'&&unreadT()?`<i class="b num">${unreadT()}</i>`:''}${k==='home'&&unseenA.length&&S.tab!=='home'?`<i class="b num">${unseenA.length}</i>`:''}${k==='grades'&&S.grades.length&&S.tab!=='grades'&&!(ls.get('exc.gseen')||0)?'<i class="b">جديد</i>':''}</button>`).join('')}</nav>`;
+  const bar=`<nav class="stabs" role="tablist">${tabs.map(([k,e,t])=>`<button role="tab" data-a="stab" data-v="${k}" aria-selected="${S.tab===k}"><span>${e}</span>${t}${k==='exc'&&pend?`<i class="b num">${pend}</i>`:''}${k==='msg'&&unreadT()?`<i class="b num">${unreadT()}</i>`:''}${k==='home'&&unseenA.length&&S.tab!=='home'?`<i class="b num">${unseenA.length}</i>`:''}${k!=='grades'||S.tab==='grades'?'':S.att.some(a=>a.level||a.cut)?'<i class="b">!</i>':S.grades.length&&!(ls.get('exc.gseen')||0)?'<i class="b">جديد</i>':''}</button>`).join('')}</nav>`;
   let body='';
   if(S.tab==='week')body=`<h2>جدولي الأسبوعي</h2><div class="wk">${wk||'<p class="sub">لا مواعيد.</p>'}</div>
      <p class="sech">شعبي (${mine.length})</p><div class="wk">${mine.map(x=>`<div style="grid-template-columns:1fr auto"><span><b>${esc(x.short||x.name)}</b><small class="sub" style="display:block">${esc(x.name)}</small></span><span class="sub">👩‍🏫 ${esc(tName(x))}</span></div>`).join('')}</div>`;
-  else if(S.tab==='grades')body=`<h2>درجاتي</h2><p class="sub" style="font-size:.85rem">درجاتك أنتِ فقط، ولا يراها غيرك.</p>${gradesView()}`;
+  else if(S.tab==='grades')body=`<h2>سجلي</h2><p class="sub" style="font-size:.85rem">حضورك ودرجاتك أنتِ فقط، ولا يراها غيرك.</p><p class="sech">الحضور والغياب</p><div class="chips">${attCards(true)}</div><p class="sech">الدرجات</p>${gradesView()}`;
   else if(S.tab==='msg')body=msgsView();
   else if(S.tab==='exc')body=`<h2>أعذاري</h2>${mineView()||'<p class="sub">لم ترسلي أي عذر بعد.</p>'}<div class="row2"><button class="btn" data-a="excuse">📩 إرسال عذر جديد</button></div>`;
-  else body=`${anns.map(a=>{const x=mine.find(z=>z.id===a.section_id)||mine.find(z=>z.owner===a.owner);return `<div class="annb">${newA.includes(a)?'<span class="nw">جديد</span>':''}📢 ${esc(a.body)}<small class="num">${esc(x?tName(x):'')}${a.section_id&&x?' · '+esc(x.short||x.name):''} · ${esc(fD.format(new Date(a.created_at)))}</small></div>`}).join('')}
+  else body=`${warnBanner()}${pushCard()}${S.err&&S.tab==='home'?`<div class="err">${esc(S.err)}</div>`:''}${anns.map(a=>{const x=mine.find(z=>z.id===a.section_id)||mine.find(z=>z.owner===a.owner);return `<div class="annb">${newA.includes(a)?'<span class="nw">جديد</span>':''}📢 ${esc(a.body)}<small class="num">${esc(x?tName(x):'')}${a.section_id&&x?' · '+esc(x.short||x.name):''} · ${esc(fD.format(new Date(a.created_at)))}</small></div>`}).join('')}
      <div class="greet"><h1>${hello}</h1><p class="sub">${esc(enc)}</p></div>${top}${offN}
+     ${S.att.length?`<p class="sech">حضوري</p><div class="chips">${attCards(false)}</div>`:''}
      ${cxs.length?`<div class="wk">${cxs.map(c=>{const m=(c.sec.meetings||[]).find(x=>x.id===c.meeting_id);return `<div class="ann cx" style="display:block">❌ أُلغيت محاضرة ${esc(c.sec.short||c.sec.name)} ${esc(DAYS[pd(c.date).getDay()]+' '+fD.format(pd(c.date)))}${m?' '+t12(m.start):''}${c.reason?' · '+esc(c.reason):''}</div>`}).join('')}</div>`:''}
      <div class="row2"><button class="btn" data-a="excuse">📩 عندي عذر</button></div>
      <div class="dh"><span class="k">${esc(d.k)}</span><p class="t">${esc(d.t)}</p><div class="s2"><span>${esc(d.s)}</span><button data-a="dh">التالي ←</button></div></div>`;
@@ -378,6 +438,7 @@ function alertErr(t){S.err=t;render();setTimeout(()=>{S.err='';},4000)}
 function shrink(file){return new Promise((ok,no)=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const M=1600,r=Math.min(1,M/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*r);c.height=Math.round(img.height*r);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?ok(b):no(),'image/jpeg',.72)};img.onerror=no;img.src=u})}
 document.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a;
   if(a==='dh'){dhi++;render();return}
+  if(a==='push'){enablePush();return}
   if(a==='mOpen'){S.mthread=t.dataset.v;S.err='';render();window.scrollTo(0,0);markReadT(S.mthread).then(()=>render());return}
   if(a==='mBack'){S.mthread=null;S.err='';render();return}
   if(a==='mSend'){const ta=$('mb'),body=(ta&&ta.value||'').trim();if(!body)return;if(!online()){S.err='لا يوجد اتصال بالإنترنت.';render();return}
@@ -400,7 +461,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-a]')
     S.login.busy=false;if(error||!data||!data.session){S.login.err='الرمز غير صحيح أو انتهت صلاحيته.';render();return}
     setUser(data.session.user);return}
   if(a==='lOut'){if(!S.outArmed){S.outArmed=true;render();setTimeout(()=>{S.outArmed=false;if(S.user)render()},4000);return}
-    try{await sb.auth.signOut()}catch(_){}S.user=null;S.mine=[];ls.set('exc.mine',[]);ls.set('exc.cache',null);ls.set('exc.grades',[]);ls.set('exc.me',null);ls.set('exc.msgs',[]);
+    try{await sb.auth.signOut()}catch(_){}S.user=null;S.mine=[];ls.set('exc.mine',[]);ls.set('exc.cache',null);ls.set('exc.grades',[]);ls.set('exc.me',null);ls.set('exc.msgs',[]);ls.set('exc.att',[]);ls.set('exc.push',null);
     try{localStorage.removeItem('reg.role')}catch(_){}location.href='index.html';return}
   if(a==='iamT'){try{localStorage.setItem('reg.role','t')}catch(_){}location.href='index.html?role=t';return}
   if(a==='myT'){S.myT=t.dataset.v;ls.set('exc.teacher',S.myT);render();return}
@@ -431,12 +492,14 @@ async function send(){
   if(!sent){try{await IDB.put({...x,at:Date.now()});S.queued++;S.saved=true}catch(e){S.sending=false;alertErr('تعذّر الإرسال والحفظ. حاولي مرة أخرى.');return}}
   S.ref=id.slice(0,6).toUpperCase();S.sending=false;render();if(sent)loadMine();
 }
-function setUser(u){S.user=u||null;if(u){S.uid=uidOf(u.email);const c=ls.get('exc.cache');if(c&&c.uid&&c.uid!==S.uid){S.sections=null;S.ann=[];S.name=''}const m=ls.get('exc.me')||{};ls.set('exc.me',{...m,uid:S.uid})}render();if(u){loadSections();flushQ();loadMine();loadGrades();loadMsgs()}}
+function setUser(u){S.user=u||null;if(u){S.uid=uidOf(u.email);const c=ls.get('exc.cache');if(c&&c.uid&&c.uid!==S.uid){S.sections=null;S.ann=[];S.name=''}const m=ls.get('exc.me')||{};ls.set('exc.me',{...m,uid:S.uid})}render();if(u){loadSections();flushQ();loadMine();loadGrades();loadMsgs();loadAtt();savePush().catch(()=>{})}}
 (async()=>{if(sb){try{const {data}=await sb.auth.getSession();S.user=data&&data.session&&data.session.user||null;if(S.user)S.uid=uidOf(S.user.email)}catch(e){}
   {const c=ls.get('exc.cache');if(!S.user||(c&&c.uid&&c.uid!==S.uid)){S.sections=S.user?null:S.sections;if(!S.user){S.sections=null;S.ann=[]}}}
   sb.auth.onAuthStateChange((_e,ses)=>{const u=ses&&ses.user||null;if((u&&u.id)!==(S.user&&S.user.id))setUser(u)})}
-  render();netDot();loadSections();flushQ();loadMine();loadGrades();loadMsgs()})();
+  render();netDot();loadSections();flushQ();loadMine();loadGrades();loadMsgs();loadAtt();if(S.user)savePush().catch(()=>{})})();
 setInterval(()=>{if(S.user&&online()&&S.tab==='msg')loadMsgs()},30000);
+setInterval(()=>{if(S.user&&online()&&!document.hidden){loadSections();loadAtt()}},120000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.user&&online()){loadSections();loadAtt();loadMine();loadGrades()}});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body></html>
