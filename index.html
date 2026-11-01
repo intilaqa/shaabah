@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٤</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٥</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -792,7 +792,8 @@ function vManage(){
   const st=S.settings,t=term(),ro=S.canWrite?'':' disabled',pf=st.profile||{};
   let h=`<section class="sec"><h2>الترحيب</h2><div class="card form"><div class="setgrid">
     <div class="f"><label for="pt">اللقب</label><select id="pt"${ro}>${['أستاذة','دكتورة','أستاذ','دكتور'].map(x=>`<option${pf.title===x?' selected':''}>${x}</option>`).join('')}</select></div>
-    <div class="f"><label for="pn">الاسم في الترحيب</label><input id="pn" value="${esc(pf.name||'')}" placeholder="اكتبي اسمك"${ro}></div></div>
+    <div class="f"><label for="pn">الاسم في الترحيب</label><input id="pn" value="${esc(pf.name||'')}" placeholder="اكتبي اسمك"${ro}></div>
+    <div class="f" style="grid-column:1/-1"><label for="ph2">أوقات الرد على رسائل الطالبات (تظهر لهن)</label><input id="ph2" maxlength="120" value="${esc(pf.hours||'')}" placeholder="مثال: من الأحد إلى الخميس، ٨ ص – ٢ م"${ro}></div></div>
     ${S.canWrite?'<div><button class="btn sm" data-act="saveProf">حفظ</button></div>':''}</div></section>`;
   h+=`<section class="sec"><h2>الفصل الدراسي</h2><div class="card form">
     ${S.settings.terms.length>1?`<div class="f"><label for="tsel">الفصل المعروض</label><select id="tsel" data-chg="term">${S.settings.terms.map(x=>`<option value="${esc(x.id)}"${t&&x.id===t.id?' selected':''}>${esc(x.name)}</option>`).join('')}</select></div>`:''}
@@ -1116,7 +1117,7 @@ document.addEventListener('click',async e=>{
   case 'ttRead':{const v=($('ttx')||{}).value||'';if(!v.trim()){toast('الصقي الجدول أولًا');$('ttx')&&$('ttx').focus();return}showTimetable(v);return}
   case 'impRmMeet':I.sections[+t.dataset.i].meetings.splice(+t.dataset.j,1);render();return;
   case 'impAddMeet':I.sections[+t.dataset.i].meetings.push({day:0,start:'08:00',end:'09:50',room:'',hours:2});render();return;
-  case 'saveProf':{const pf={title:$('pt').value,name:$('pn').value.trim()};write(()=>db.doc('config/settings').set({...S.settings,profile:pf}),'حُفظ');return}
+  case 'saveProf':{const pf={title:$('pt').value,name:$('pn').value.trim(),hours:($('ph2')||{}).value?$('ph2').value.trim():''};write(()=>db.doc('config/settings').set({...S.settings,profile:pf}),'حُفظ');return}
   case 'saveTerm':{const name=$('tn').value.trim()||'الفصل الدراسي',start=$('ts').value,weeks=Math.max(1,parseInt($('tw').value,10)||15);
     if(!start){$('ts').focus();toast('حدد تاريخ أول أسبوع');return}
     const terms=[...S.settings.terms];const cur=term();let id=cur?cur.id:rid('t');

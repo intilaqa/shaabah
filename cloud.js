@@ -6,7 +6,7 @@ const isStudentEmail=e=>String(e||'').toLowerCase().endsWith('@'+String(CFG.stud
 const KIND_EMO={'مرضي':'🤒','وفاة':'🖤','ظرف عائلي':'🏠','موعد رسمي':'📄','أخرى':'✏️'};
 const REJECT=['لا يوجد ما يثبت','خارج المدة المسموحة','العذر غير مقبول','التاريخ غير صحيح'];
 const C={sb:null,user:null,owner:false,status:'off',err:'',pending:new Set(lsGet('reg.cloud.pending')||[]),lastPull:lsGet('reg.cloud.lastPull')||'',
-  ex:[],exLoaded:false,ann:lsGet('reg.ann')||[],annOpen:false,exAt:0,exFilter:'pending',rejFor:null,busy:false,applying:false,authMode:'in',grades:{},gImp:null,gBusy:null,q:lsGet('reg.cloud.q')||[],ver:{}};
+  ex:[],exLoaded:false,ann:lsGet('reg.ann')||[],annOpen:false,exAt:0,exFilter:'pending',rejFor:null,busy:false,applying:false,authMode:'in',msgs:lsGet('reg.msgs')||[],exView:'exc',thread:null,grades:{},gImp:null,gBusy:null,q:lsGet('reg.cloud.q')||[],ver:{}};
 window.CLOUD=C;
 /* excuses live in Supabase only — never stored on the teacher's phone */
 try{localStorage.removeItem('reg.exc');localStorage.removeItem('reg.excAt')}catch(_){}
@@ -67,7 +67,7 @@ async function sync(full){
       const {data,error}=await q;if(error)throw error;if(!data||!data.length)break;
       C.applying=true;try{for(const r of data){if(C.pending.has(r.path))continue;LDB.applyRemote(r.path,r.deleted?null:r.data)}}finally{C.applying=false}
       C.lastPull=data[data.length-1].updated_at;lsSet('reg.cloud.lastPull',C.lastPull);if(data.length<1000)break}
-    await loadExcuses();await loadAnn();await loadGrades();
+    await loadExcuses();await loadAnn();await loadGrades();await loadMsgs();
     C.status='ok';C.err='';
   }catch(e){C.status='error';C.err=(e&&e.message)||'تعذّرت المزامنة'}
   finally{C.busy=false;render()}
@@ -75,7 +75,7 @@ async function sync(full){
 async function publishSections(){
   const t=term();if(!t)return;const list=secs();
   const since=ymd(new Date(Date.now()-35*864e5));const A=allAtt();
-  const rows=list.map(c=>({id:c.id,owner:C.user.id,name:c.name,short:c.short||'',meetings:(c.meetings||[]).map(m=>({id:m.id,day:m.day,start:m.start,end:endOf(m),room:m.room||'',hours:m.hours})),term_start:t.start,weeks:t.weeks,teacher:[(S.settings.profile||{}).title,(S.settings.profile||{}).name].filter(Boolean).join(' '),
+  const rows=list.map(c=>({id:c.id,owner:C.user.id,name:c.name,short:c.short||'',meetings:(c.meetings||[]).map(m=>({id:m.id,day:m.day,start:m.start,end:endOf(m),room:m.room||'',hours:m.hours})),term_start:t.start,weeks:t.weeks,teacher:[(S.settings.profile||{}).title,(S.settings.profile||{}).name].filter(Boolean).join(' '),hours_note:(S.settings.profile||{}).hours||'',
     cancelled:A.filter(d=>d.classId===c.id&&d.cancelled&&d.date>=since).map(d=>({date:d.date,meeting_id:d.meetingId,reason:d.reason||''}))}));
   if(rows.length){const {error}=await C.sb.from('sections_public').upsert(rows);if(error)throw error}
   await publishRoster(list);
@@ -95,17 +95,21 @@ async function publishRoster(list){
 }
 /* actions done without internet wait here and are sent in order once online */
 async function flushQ(){
+  const hadMsg=C.q.some(a=>a.t==='msg');
   while(C.q.length){const a=C.q[0];let r;
     if(a.t==='dec')r=await C.sb.from('excuses').update({status:a.status,reason:a.reason||null,decided_at:a.status==='pending'?null:a.at}).eq('id',a.id);
     else if(a.t==='ann'){const row={...a.row};delete row.id;delete row.created_at;r=await C.sb.from('announcements').insert(row)}
     else if(a.t==='annDel')r=await C.sb.from('announcements').delete().eq('id',a.id);
+    else if(a.t==='msg')r=await C.sb.from('messages').insert({section_id:a.row.section_id,student_user:a.row.student_user,body:a.row.body});
     if(r&&r.error)throw r.error;C.q.shift();saveQ()}
+  if(hadMsg){C.msgs=C.msgs.filter(m=>!String(m.id).startsWith('tmp-'));await loadMsgs()}
 }
 function overlayQ(){
   for(const a of C.q){
     if(a.t==='dec'){const e=C.ex.find(x=>x.id===a.id);if(e){e.status=a.status;e.reason=a.reason||null}}
     else if(a.t==='ann'){if(!C.ann.find(x=>x.id===a.row.id))C.ann.unshift(a.row)}
-    else if(a.t==='annDel')C.ann=C.ann.filter(x=>x.id!==a.id)}
+    else if(a.t==='annDel')C.ann=C.ann.filter(x=>x.id!==a.id);
+    else if(a.t==='msg'){if(!C.msgs.find(x=>x.id===a.row.id))C.msgs.push(a.row)}}
 }
 function enqueue(a){C.q.push(a);saveQ();overlayQ();lsSet('reg.ann',C.ann);if(online())sync();else renderHead(computeStats())}
 async function loadAnn(){const {data,error}=await C.sb.from('announcements').select('*').eq('owner',C.user.id).order('created_at',{ascending:false}).limit(200);if(!error){C.ann=data||[];overlayQ();lsSet('reg.ann',C.ann)}}
@@ -186,6 +190,36 @@ window.gradesBlock=function(c){
   return h+'</div>';
 };
 
+/* ---- messages: one thread per (section, student) ---- */
+async function loadMsgs(){
+  const {data,error}=await C.sb.from('messages').select('*').eq('teacher',C.user.id).order('created_at',{ascending:true}).limit(2000);
+  if(error)return;C.msgs=data||[];overlayQ();lsSet('reg.msgs',C.msgs.slice(-500));
+}
+const tkey=m=>m.section_id+'|'+m.student_user;
+function threads(){const by=new Map();for(const m of C.msgs){const k=tkey(m);if(!by.has(k))by.set(k,{k,section_id:m.section_id,student_user:m.student_user,uid:m.student_uid,name:m.student_name,list:[]});
+  const t=by.get(k);t.list.push(m);if(!t.name&&m.student_name)t.name=m.student_name}
+  return [...by.values()].map(t=>({...t,last:t.list[t.list.length-1],unread:t.list.filter(m=>!m.from_teacher&&!m.read_at).length})).sort((a,b)=>a.last.created_at<b.last.created_at?1:-1)}
+const unreadMsgs=()=>C.msgs.filter(m=>!m.from_teacher&&!m.read_at).length;
+async function markRead(t){
+  const ids=t.list.filter(m=>!m.from_teacher&&!m.read_at).map(m=>m.id);if(!ids.length)return;
+  const now=new Date().toISOString();ids.forEach(id=>{const m=C.msgs.find(x=>x.id===id);if(m)m.read_at=now});lsSet('reg.msgs',C.msgs.slice(-500));renderHead(computeStats());
+  if(online())await C.sb.from('messages').update({read_at:now}).in('id',ids);
+}
+const fM=F({day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+function vMsgs(){
+  const T=threads();
+  if(C.thread){const t=T.find(x=>x.k===C.thread);if(!t){C.thread=null;return vMsgs()}const c=cById(t.section_id);
+    return `<div class="sec-h"><button class="lnk" data-act="mBack">→ كل المحادثات</button><button class="lnk" data-act="exRefresh">تحديث</button></div>
+    <div class="card" style="padding:12px 14px"><b>${esc(t.name||t.uid)}</b> <span class="hint num">· ${esc(t.uid)} · ${esc(c?c.short||c.name:'')}</span></div>
+    <div class="chat">${t.list.map(m=>`<div class="bub ${m.from_teacher?'me':''}"><p>${esc(m.body)}</p><small class="num">${esc(fM.format(new Date(m.created_at)))}${m.from_teacher&&String(m.id).startsWith('tmp-')?' · بانتظار الإرسال':''}</small></div>`).join('')}</div>
+    <div class="card form"><div class="f"><label for="mr">ردّك</label><textarea id="mr" maxlength="1000" style="min-height:80px" placeholder="اكتبي ردّك…"></textarea></div>
+    <div><button class="btn pri" data-act="mSend">إرسال</button></div></div>`}
+  if(!T.length)return `<div class="card empty"><b>لا رسائل بعد</b>تظهر هنا رسائل طالبات شعبك. تراسلك الطالبة من تبويب «رسائل» في صفحتها.</div>`;
+  return `<div class="alerts">${T.map(t=>{const c=cById(t.section_id);return `<button class="card al ${t.unread?'l1':''}" style="text-align:start;width:100%" data-act="mOpen" data-k="${esc(t.k)}"><span class="stripe" ${t.unread?'':'style="background:var(--line)"'}></span><div class="body">
+    <div class="top1"><div><div class="name">${esc(t.name||t.uid)}</div><div class="cls num">${esc(c?c.short||c.name:'')} · ${esc(t.uid)}</div></div>${t.unread?`<span class="pill new num">${t.unread} جديدة</span>`:''}</div>
+    <div class="hint" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.last.from_teacher?'أنتِ: ':''}${esc(t.last.body)}</div><small class="hint num">${esc(fM.format(new Date(t.last.created_at)))}</small></div></button>`}).join('')}</div>`;
+}
+
 /* ---- header ---- */
 const _renderHead=renderHead;
 renderHead=function(stats){_renderHead(stats);
@@ -195,14 +229,15 @@ renderHead=function(stats){_renderHead(stats);
     net.className='net'+(C.status==='ok'&&!pend?'':' off');net.innerHTML='<i></i>'+t;
     if(C.user){const b=document.createElement('button');b.className='pill '+(S.armed==='out'?'deny':'muted');b.dataset.act='cOut';b.title=C.user.email||'';
       b.textContent=S.armed==='out'?'تأكيد الخروج':'⎋ خروج';net.after(b)}}
-  const n=C.ex.filter(e=>e.status==='pending').length,b=document.querySelector('.tabs button[data-tab="exc"]');
+  const n=C.ex.filter(e=>e.status==='pending').length+unreadMsgs(),b=document.querySelector('.tabs button[data-tab="exc"]');
   if(b){b.querySelector('.dot')?.remove();if(n&&S.tab!=='exc'){const s=document.createElement('span');s.className='dot num';s.style.background='var(--accent)';s.textContent=n;b.appendChild(s)}}
 };
 
 /* ---- home badge ---- */
 const _vHome=vHome;
-vHome=function(stats){let h=_vHome(stats);const n=C.ex.filter(e=>e.status==='pending').length;
-  if(n)h=h.replace('<div class="greet">',`<div class="greet"><button class="exbadge" data-act="tab" data-tab="exc">📩 ${n===1?'عندك عذر جديد':n===2?'عندك عذران جديدان':`عندك ${n} أعذار جديدة`}</button>`);
+vHome=function(stats){let h=_vHome(stats);const n=C.ex.filter(e=>e.status==='pending').length,m=unreadMsgs();
+  const parts=[n?(n===1?'عذر جديد':n===2?'عذران جديدان':n+' أعذار جديدة'):'',m?(m===1?'رسالة جديدة':m===2?'رسالتان جديدتان':m+' رسائل جديدة'):''].filter(Boolean);
+  if(parts.length)h=h.replace('<div class="greet">',`<div class="greet"><button class="exbadge" data-act="${m&&!n?'exGoMsg':'tab'}" data-tab="exc">${m&&!n?'💬':'📩'} عندك ${parts.join(' و')}</button>`);
   return h};
 
 /* ---- excuses view ---- */
@@ -219,9 +254,12 @@ function replyFor(e){const{c,m}=lectureOf(e);const when=fD.format(pd(e.lecture_d
 window.vExc=function(stats){
   if(!configured())return `<div class="card empty"><b>استقبال الأعذار يحتاج الربط بالإنترنت</b>بعد إضافة بيانات Supabase في ملف config.js، سجّلي دخولك من «الإعداد».<br><br><button class="btn pri" data-act="tab" data-tab="manage">الإعداد</button></div>`;
   if(!C.user||!C.owner)return `<div class="card empty"><b>سجّلي دخولك أولًا</b>من «الإعداد» ← الربط بالإنترنت، لتصلك أعذار الطالبات.<br><br><button class="btn pri" data-act="tab" data-tab="manage">تسجيل الدخول</button></div>`;
+  const um=unreadMsgs(),pe=C.ex.filter(e=>e.status==='pending').length;
+  const sw=`<div class="filters" style="margin-bottom:4px"><button data-act="exView" data-v="exc" aria-pressed="${C.exView!=='msg'}">📩 الأعذار${pe?` <span class="num">${pe}</span>`:''}</button><button data-act="exView" data-v="msg" aria-pressed="${C.exView==='msg'}">💬 الرسائل${um?` <span class="num">${um}</span>`:''}</button></div>`;
+  if(C.exView==='msg')return `<section class="sec">${sw}${vMsgs()}</section>`;
   const cnt=k=>C.ex.filter(e=>e.status===k).length;const f=C.exFilter;
   const today=ymd(new Date()),act=C.ann.filter(a=>!a.until||a.until>=today);
-  let h=`<section class="sec"><div class="sec-h"><h2>إعلانات للطالبات</h2><button class="lnk" data-act="annToggle">${C.annOpen?'إغلاق':'+ إعلان جديد'}</button></div>
+  let h=`<section class="sec">${sw}</section><section class="sec"><div class="sec-h"><h2>إعلانات للطالبات</h2><button class="lnk" data-act="annToggle">${C.annOpen?'إغلاق':'+ إعلان جديد'}</button></div>
   ${C.annOpen?`<div class="card form"><div class="f"><label for="anb">نص الإعلان</label><textarea id="anb" maxlength="500" placeholder="مثال: محاضرة الأحد ستكون في قاعة SH-BF-04 بدل القاعة المعتادة"></textarea></div>
     <div class="setgrid"><div class="f"><label for="ans">لمن؟</label><select id="ans"><option value="">كل الشعب</option>${secs().map(c=>`<option value="${esc(c.id)}">${esc(c.short||c.name)}</option>`).join('')}</select></div>
     <div class="f"><label for="anu">يظهر حتى</label><input id="anu" type="date" value="${ymd(new Date(Date.now()+7*864e5))}"></div></div>
@@ -328,6 +366,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
 /* ---- actions ---- */
 document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-act]');if(!t)return;const a=t.dataset.act;
   switch(a){
+  case 'exView':C.exView=t.dataset.v;C.thread=null;render();break;
+  case 'exGoMsg':S.tab='exc';C.exView='msg';C.thread=null;render();window.scrollTo(0,0);break;
+  case 'mOpen':{C.thread=t.dataset.k;render();window.scrollTo(0,0);const th=threads().find(x=>x.k===C.thread);if(th)markRead(th);break}
+  case 'mBack':C.thread=null;render();break;
+  case 'mSend':{const ta=document.getElementById('mr'),body=(ta&&ta.value||'').trim();if(!body){toast('اكتبي الرد أولًا');return}
+    const th=threads().find(x=>x.k===C.thread);if(!th)return;
+    const row={id:'tmp-'+Date.now().toString(36),created_at:new Date().toISOString(),section_id:th.section_id,student_user:th.student_user,student_uid:th.uid,student_name:th.name,teacher:C.user.id,from_teacher:true,body};
+    enqueue({t:'msg',row});toast(online()?'أُرسل الرد ✓':'حُفظ الرد وسيُرسل عند الاتصال');render();break}
   case 'gPub':publishGrades();break;
   case 'gCancel':C.gImp=null;render();break;
   case 'gDel':{const k='g:'+t.dataset.c+t.dataset.t;S.openCls=t.dataset.c;if(S.armed!==k){S.armed=k;render();return}S.armed=null;
@@ -378,7 +424,11 @@ const st=document.createElement('style');st.textContent=`
 .exbody{background:var(--bg);border-radius:10px;padding:10px 12px}.exbody p{margin:4px 0 0;white-space:pre-wrap;line-height:1.7}
 .exacts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.exacts .btn{width:100%}
 .reasons{display:flex;gap:6px;flex-wrap:wrap}
-.annc{padding:12px 14px;display:flex;flex-direction:column;gap:6px}.annc p{margin:0;line-height:1.7}`;document.head.appendChild(st);
+.annc{padding:12px 14px;display:flex;flex-direction:column;gap:6px}.annc p{margin:0;line-height:1.7}
+.chat{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+.bub{max-width:85%;align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:16px 16px 16px 4px;padding:8px 12px}
+.bub.me{align-self:flex-end;background:var(--accent-soft);border-color:transparent;border-radius:16px 16px 4px 16px}
+.bub p{margin:0;white-space:pre-wrap;line-height:1.7}.bub small{color:var(--muted);font-size:.72rem}`;document.head.appendChild(st);
 
 connect().then(()=>render());
 })();

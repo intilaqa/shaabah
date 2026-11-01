@@ -193,3 +193,66 @@ drop policy if exists "my grades" on public.grades;
 create policy "student sees own grades" on public.grades for select to authenticated
   using (published and public.is_student() and uid = split_part(lower(auth.jwt()->>'email'),'@',1));
 create policy "my grades" on public.grades for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid() and not public.is_student());
+
+-- ===== الرسائل بين الطالبة وأستاذة شعبتها (نص فقط) =====
+alter table public.sections_public add column if not exists hours_note text;
+
+create table if not exists public.messages(
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  section_id text not null,
+  teacher uuid,
+  student_user uuid,
+  student_uid text,
+  student_name text,
+  from_teacher boolean not null default false,
+  body text not null check (char_length(body) between 1 and 1000),
+  read_at timestamptz);
+create index if not exists messages_teacher on public.messages(teacher, created_at);
+create index if not exists messages_student on public.messages(student_user, created_at);
+
+-- من يرسل؟ تُملأ الحقول تلقائيًا ولا يمكن تزويرها
+create or replace function public.message_fill() returns trigger language plpgsql security definer set search_path=public as
+$$ declare me_uid text; begin
+  new.read_at := null; new.created_at := now();
+  if public.is_student() then
+    me_uid := split_part(lower(auth.jwt()->>'email'),'@',1);
+    new.from_teacher := false; new.student_user := auth.uid(); new.student_uid := me_uid;
+    select owner into new.teacher from public.sections_public where id = new.section_id;
+    if new.teacher is null then raise exception 'unknown section'; end if;
+    select name into new.student_name from public.roster where section_id = new.section_id and uid = me_uid;
+    if not found then raise exception 'not in this section'; end if;
+  else
+    new.from_teacher := true; new.teacher := auth.uid();
+    if not exists(select 1 from public.sections_public where id = new.section_id and owner = auth.uid()) then raise exception 'not your section'; end if;
+    select student_uid, student_name into new.student_uid, new.student_name from public.messages
+      where section_id = new.section_id and student_user = new.student_user and teacher = auth.uid() and not from_teacher limit 1;
+    if new.student_uid is null then raise exception 'no conversation'; end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists messages_fill on public.messages;
+create trigger messages_fill before insert on public.messages for each row execute function public.message_fill();
+
+-- التعديل الوحيد المسموح: «قُرئت»
+create or replace function public.message_lock() returns trigger language plpgsql as
+$$ begin
+  if new.body is distinct from old.body or new.section_id is distinct from old.section_id or new.teacher is distinct from old.teacher
+     or new.student_user is distinct from old.student_user or new.from_teacher is distinct from old.from_teacher then
+    raise exception 'only read status can change'; end if;
+  return new;
+end $$;
+drop trigger if exists messages_lock on public.messages;
+create trigger messages_lock before update on public.messages for each row execute function public.message_lock();
+
+alter table public.messages enable row level security;
+drop policy if exists "read my messages" on public.messages;
+drop policy if exists "send messages" on public.messages;
+drop policy if exists "mark read" on public.messages;
+create policy "read my messages" on public.messages for select to authenticated
+  using (student_user = auth.uid() or teacher = auth.uid());
+create policy "send messages" on public.messages for insert to authenticated
+  with check ((public.is_student() and student_user = auth.uid() and not from_teacher) or (not public.is_student() and teacher = auth.uid() and from_teacher));
+create policy "mark read" on public.messages for update to authenticated
+  using ((teacher = auth.uid() and not from_teacher) or (student_user = auth.uid() and from_teacher))
+  with check ((teacher = auth.uid() and not from_teacher) or (student_user = auth.uid() and from_teacher));
