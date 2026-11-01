@@ -322,13 +322,17 @@ async function decide(id,status,reason){
   const e=C.ex.find(x=>x.id===id);if(!e)return;
   C.q=C.q.filter(a=>!(a.t==='dec'&&a.id===id));
   e.status=status;e.reason=reason||null;enqueue({t:'dec',id,status,reason:reason||null,at:new Date().toISOString()});
-  const s=matchStudent(e),{c,m}=lectureOf(e);
-  if(s&&c){const d=allAtt().find(x=>x.classId===c.id&&x.date===e.lecture_date&&(!m||x.meetingId===m.id)&&!x.cancelled);
-    if(d){const cur=(d.marks||{})[s.id];let nv=null;
-      if(status==='approved'&&cur!=='e'&&cur!=='p'&&cur!=='l')nv='e';
+  const s=matchStudent(e),{c,m}=lectureOf(e);let note='';
+  if(!s)note=' — الطالبة غير موجودة في كشف الشعبة، فلم يتغير السجل';
+  else if(c){const d=allAtt().find(x=>x.classId===c.id&&x.date===e.lecture_date&&(!m||x.meetingId===m.id));
+    if(d&&d.cancelled)note=' — المحاضرة مُلغاة أصلًا';
+    else if(d){const cur=(d.marks||{})[s.id];let nv=null;
+      if(status==='approved'&&cur!=='e')nv='e';
       if(status!=='approved'&&cur==='e')nv='a';
-      if(nv){const body={...d,marks:{...d.marks,[s.id]:nv},updatedAt:new Date().toISOString()};delete body.id;queue(d.id,body)}}}
-  toast((status==='approved'?'اعتُمد العذر ✓':status==='rejected'?'رُفض العذر':'أُعيد العذر للانتظار')+(online()?'':' — يُرفع عند الاتصال'));C.rejFor=null;render();
+      if(nv){const body={...d,marks:{...d.marks,[s.id]:nv},updatedAt:new Date().toISOString()};delete body.id;queue(d.id,body);
+        note=nv==='e'?' — وتحوّلت في السجل إلى «غائبة بعذر»':' — وأُعيدت في السجل إلى «غائبة»'}}
+    else if(status==='approved')note=' — المحاضرة لم تُحضّر بعد، وستظهر «غائبة بعذر» تلقائيًا عند تحضيرها'}
+  toast((status==='approved'?'اعتُمد العذر ✓':status==='rejected'?'رُفض العذر':'أُعيد العذر للانتظار')+note+(online()?'':' (يُرفع عند الاتصال)'),note?6000:2400);C.rejFor=null;render();
 }
 async function openFile(id){const e=C.ex.find(x=>x.id===id);if(!e||!e.file_path)return;
   if(!online()){toast('عرض المرفق يحتاج اتصالًا');return}
