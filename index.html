@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٠</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١١</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -369,7 +369,10 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 (function(){
   const get=()=>{try{return localStorage.getItem('reg.role')}catch(e){return null}},put=v=>{try{v?localStorage.setItem('reg.role',v):localStorage.removeItem('reg.role')}catch(e){}};
   const q=new URLSearchParams(location.search).get('role');if(q==='t'||q==='s')put(q);
-  const r=get();if(r==='s'){location.replace('excuse.html');return}
+  /* a device that holds a teacher's account/data never auto-jumps to the student page */
+  const teacherHere=(()=>{try{return !!(localStorage.getItem('reg.auth')||localStorage.getItem('reg.cloud.uid')||localStorage.getItem('reg.db.v1'))}catch(e){return false}})();
+  let r=get();if(r==='s'&&teacherHere&&q!=='s'){put('t');r='t'}
+  if(r==='s'){location.replace('excuse.html');return}
   const box=document.getElementById('role');if(!r)box.hidden=false;
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-role]');
