@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٣</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٤</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -834,7 +834,8 @@ function vManage(){
     ${S.canWrite?'<div><button class="btn pri" data-act="saveSet">حفظ القواعد</button></div>':''}
     <p class="rule">الحساب بالساعات المحتسبة لا بعدد المحاضرات. المحاضرة المُلغاة لا تُحتسب على أحد وتُخصم ساعاتها من مجموع المقرر. تُحفظ ساعات كل محاضرة مع تحضيرها، فلا يتغير الحساب القديم إذا عُدّل الجدول. الحضور ${st.minAttend}% تمامًا لا يُعد حرمانًا.</p></div></section>`;
   h+=`<section class="sec"><h2>النسخة الاحتياطية</h2><div class="card form">
-    <p class="rule">بياناتك محفوظة على هذا الجوال فقط. نزّل نسخة احتياطية كل أسبوع واحفظها في الملفات أو أرسلها لنفسك، حتى لا تضيع إذا تغيّر الجوال أو مُسحت بيانات المتصفح.</p>
+    ${window.CLOUD&&CLOUD.user?`<p class="rule">✅ بياناتك محفوظة تلقائيًا في حسابك على الإنترنت، وترجع كاملة إذا غيّرتِ الجوال أو سجّلتِ الدخول من جهاز آخر. النسخة الاحتياطية هنا <b>اختيارية</b>، مثلًا لحفظ نسخة من الفصل في ملفاتك.</p>`
+      :`<p class="rule">⚠️ أنتِ غير مسجّلة الدخول، فبياناتك على هذا الجهاز فقط. سجّلي الدخول لتُحفظ تلقائيًا في حسابك.</p>`}
     <div class="inline"><button class="btn pri" data-act="backup">تنزيل نسخة احتياطية</button><span class="filebtn btn"><span>استعادة من ملف</span><input type="file" accept=".json,application/json" data-chg="restore" aria-label="ملف النسخة الاحتياطية"></span></div>
     ${S.restore?`<div class="preview">الملف يحتوي <b class="num">${S.restore.n}</b> شعب و<b class="num">${S.restore.a}</b> محاضرة مسجّلة. الاستعادة تستبدل كل البيانات الحالية.<div class="inline" style="margin-top:8px"><button class="btn danger armed" data-act="restoreGo">تأكيد الاستعادة</button><button class="btn" data-act="restoreNo">إلغاء</button></div></div>`:''}
   </div></section>`;
