@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٥</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٦</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -720,7 +720,10 @@ async function exportXls(scope){
     let nm=(c.short||c.name).replace(/[\[\]:*?\/\\]/g,' ').slice(0,28)||'شعبة';while(used.has(nm))nm=nm.slice(0,26)+'_'+used.size;used.add(nm);
     XLSX.utils.book_append_sheet(wb,ws,nm)}
   const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-  const fn=(scope==='all'?'سجل الحضور - كل الشعب':'سجل الحضور - '+(cById(S.regSec).short||'شعبة'))+' '+ymd(new Date())+'.xlsx';
+  /* file name: حضور - شعبة <رقم الشعبة> - <الفصل الدراسي> */
+  const tn=((term()||{}).name||'').trim(),one=cById(S.regSec);
+  const secLabel=c=>{const code=((c.name||'').match(/\b[A-Z]{1,2}\d{1,3}\b/)||[''])[0];return ['شعبة',code||(c.short||''),c.secNo||''].filter(Boolean).join(' ').trim()};
+  const fn=(['حضور',scope==='all'?'كل الشعب':secLabel(one),tn].filter(Boolean).join(' - ')).replace(/[\\/:*?"<>|]/g,' ')+'.xlsx';
   try{await dl.save({filename:fn,data:new Blob([buf])});toast('جُهّز الملف')}catch(e){if(e&&e.code!=='declined')toast('تعذّر تنزيل الملف')}
 }
 
