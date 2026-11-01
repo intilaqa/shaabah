@@ -235,6 +235,19 @@ function vMsgs(){
     <div class="hint" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.last.from_teacher?'أنتِ: ':''}${esc(t.last.body)}</div><small class="hint num">${esc(fM.format(new Date(t.last.created_at)))}</small></div></button>`}).join('')}</div>`;
 }
 
+/* ---- QR code of the student page: show in class or save as an image ---- */
+async function showQR(){
+  try{if(!window.QRCode)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js')}catch(e){toast('الباركود يحتاج اتصالًا بالإنترنت أول مرة');return}
+  document.getElementById('qrbox')?.remove();
+  const o=document.createElement('div');o.id='qrbox';o.className='role';o.style.zIndex=80;
+  o.innerHTML=`<div class="role-in"><h1>صفحة الطالبات</h1><p>صوّري الباركود بكاميرا الجوال</p>
+    <div id="qrc" style="background:#fff;padding:18px;border-radius:20px;box-shadow:0 10px 30px -18px rgba(0,0,0,.5)"></div>
+    <p dir="ltr" style="font-size:.85rem">${esc(studentLink())}</p>
+    <div class="inline" style="justify-content:center"><button class="btn pri" data-act="qrSave">تنزيل صورة</button><button class="btn" data-act="exLink">نسخ الرابط</button><button class="btn" data-act="qrClose">إغلاق</button></div></div>`;
+  document.body.appendChild(o);
+  new QRCode(document.getElementById('qrc'),{text:studentLink(),width:Math.min(300,innerWidth-90),height:Math.min(300,innerWidth-90),colorDark:'#17707a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+}
+
 /* ---- header ---- */
 const _renderHead=renderHead;
 renderHead=function(stats){_renderHead(stats);
@@ -335,7 +348,7 @@ vManage=function(){let h=_vManage();
     <div class="inline"><button class="btn pri" data-act="cAuth">${C.authMode==='up'?'إنشاء الحساب':'تسجيل الدخول'}</button><button class="lnk" data-act="cMode">${C.authMode==='up'?'عندي حساب':'أول مرة؟ أنشئي حسابًا'}</button></div>`;
   else box=`<div class="state"><span>${C.owner?'✅ مرتبطة':C.status==='notowner'?'⚠️ هذا الحساب ليس حساب أستاذة':'…'} <span class="hint" dir="ltr">${esc(C.user.email||'')}</span></span><button class="lnk mut" data-act="cOut">تسجيل الخروج</button></div>
     <div class="facts num"><span>الحالة: <b>${{ok:'متزامن',syncing:'جارٍ المزامنة',offline:'بدون اتصال',error:'خطأ',notowner:'غير مصرّح'}[C.status]||'—'}</b></span><span>بانتظار الرفع: <b>${C.pending.size+C.q.length}</b></span></div>
-    ${C.owner?`<div class="inline"><button class="btn" data-act="exLink">🔗 نسخ رابط صفحة الطالبات</button><button class="btn" data-act="cSync">مزامنة الآن</button></div>
+    ${C.owner?`<div class="inline"><button class="btn" data-act="exQR">🔳 باركود صفحة الطالبات</button><button class="btn" data-act="exLink">🔗 نسخ الرابط</button><button class="btn" data-act="cSync">مزامنة الآن</button></div>
     <div class="setgrid"><div class="f"><label for="xd">العذر متأخر بعد (أيام)</label><input id="xd" type="number" min="1" max="60" value="${lateDays()}"></div></div><div><button class="btn sm" data-act="cDays">حفظ</button></div>`:''}`;
   if(C.err)box+=`<div class="banner err" style="margin:0">${esc(C.err)}</div>`;
   const sec=`<section class="sec"><h2>الربط بالإنترنت والأعذار</h2><div class="card form">${box}<p class="rule">التحضير والإعداد يعملان بدون إنترنت ويُحفظان على جوالك ثم يُرفعان تلقائيًا. أعذار الطالبات ومرفقاتها تبقى في قاعدة البيانات على الإنترنت فقط ولا تُخزَّن على جوالك.</p></div></section>`;
@@ -382,6 +395,9 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   switch(a){
   case 'exView':C.exView=t.dataset.v;C.thread=null;render();break;
   case 'gBack':{try{localStorage.removeItem('reg.role')}catch(_){}C.err='';const rb=document.getElementById('role');if(rb)rb.hidden=false;break}
+  case 'exQR':showQR();break;
+  case 'qrClose':{const o=document.getElementById('qrbox');o&&o.remove();break}
+  case 'qrSave':{const cv=document.querySelector('#qrbox canvas');if(!cv)break;cv.toBlob(b=>dl.save({filename:'باركود صفحة الطالبات - شعبتي.png',data:b}).then(()=>toast('نُزّلت صورة الباركود')),'image/png');break}
   case 'annNew':C.exView='exc';C.thread=null;C.annOpen=true;render();window.scrollTo(0,0);setTimeout(()=>{const a=document.getElementById('anb');a&&a.focus()},50);break;
   case 'exGoMsg':S.tab='exc';C.exView='msg';C.thread=null;render();window.scrollTo(0,0);break;
   case 'mOpen':{C.thread=t.dataset.k;render();window.scrollTo(0,0);const th=threads().find(x=>x.k===C.thread);if(th)markRead(th);break}
