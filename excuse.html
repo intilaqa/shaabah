@@ -96,6 +96,10 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
 .gbar{height:8px;border-radius:4px;background:var(--bg);overflow:hidden}.gbar i{display:block;height:100%;background:var(--accent);border-radius:4px}
 .gitems{display:flex;flex-wrap:wrap;gap:6px}.gitems span{background:var(--bg);border-radius:10px;padding:3px 10px;font-size:.82rem}
 .sech{font-family:var(--f-hero);font-size:1.05rem;margin:4px 0 0}
+.annb{border:2px solid var(--accent);background:var(--accent-soft);border-radius:16px;padding:12px 14px;line-height:1.75;position:relative}
+.annb .nw{display:inline-block;background:var(--deny);color:#fff;border-radius:8px;padding:0 8px;font-size:.72rem;font-weight:700;margin-inline-end:6px}
+.annb small{display:block;color:var(--muted);font-size:.76rem}
+.annbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--ink);color:var(--surface);border:0;border-radius:14px;padding:10px 14px;font-weight:700;width:100%;margin-top:10px;text-align:start}
 .chat{display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow:auto;padding:4px 2px}
 .bub{max-width:85%;align-self:flex-end;background:var(--bg);border-radius:16px 16px 16px 4px;padding:8px 12px}
 .bub.me{align-self:flex-start;background:var(--accent-soft);border-radius:16px 16px 4px 16px}
@@ -117,7 +121,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ١٩</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢٠</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -321,20 +325,24 @@ function portal(){
   const d=DH[dhi%DH.length];
   const qb=S.queued?`<div class="q"><span>📤 ${S.queued===1?'عذر واحد محفوظ':S.queued+' أعذار محفوظة'} على جوالك ويُرسل تلقائيًا عند الاتصال</span>${online()?'<button data-a="flush">إرسال الآن</button>':''}</div>`:'';
   const offN=!online()&&S.at?`<p class="sub" style="font-size:.8rem">بدون اتصال · آخر تحديث ${esc(fD.format(new Date(S.at)))}</p>`:'';
+  S.fresh=S.fresh||new Set();const seenA=ls.get('exc.annseen')||[],unseenA=anns.filter(a=>!seenA.includes(a.id)),newA=anns.filter(a=>!seenA.includes(a.id)||S.fresh.has(a.id));
   const tabs=[['home','🏠','الرئيسية'],['week','🗓️','جدولي'],['grades','📊','درجاتي'],['msg','💬','رسائل'],['exc','📩','أعذاري']];
   const pend=S.mine.filter(e=>e.status!=='pending'&&!(ls.get('exc.seen')||[]).includes(e.id)).length;
-  const bar=`<nav class="stabs" role="tablist">${tabs.map(([k,e,t])=>`<button role="tab" data-a="stab" data-v="${k}" aria-selected="${S.tab===k}"><span>${e}</span>${t}${k==='exc'&&pend?`<i class="b num">${pend}</i>`:''}${k==='msg'&&unreadT()?`<i class="b num">${unreadT()}</i>`:''}${k==='grades'&&S.grades.length&&S.tab!=='grades'&&!(ls.get('exc.gseen')||0)?'<i class="b">جديد</i>':''}</button>`).join('')}</nav>`;
+  const bar=`<nav class="stabs" role="tablist">${tabs.map(([k,e,t])=>`<button role="tab" data-a="stab" data-v="${k}" aria-selected="${S.tab===k}"><span>${e}</span>${t}${k==='exc'&&pend?`<i class="b num">${pend}</i>`:''}${k==='msg'&&unreadT()?`<i class="b num">${unreadT()}</i>`:''}${k==='home'&&unseenA.length&&S.tab!=='home'?`<i class="b num">${unseenA.length}</i>`:''}${k==='grades'&&S.grades.length&&S.tab!=='grades'&&!(ls.get('exc.gseen')||0)?'<i class="b">جديد</i>':''}</button>`).join('')}</nav>`;
   let body='';
   if(S.tab==='week')body=`<h2>جدولي الأسبوعي</h2><div class="wk">${wk||'<p class="sub">لا مواعيد.</p>'}</div>
      <p class="sech">شعبي (${mine.length})</p><div class="wk">${mine.map(x=>`<div style="grid-template-columns:1fr auto"><span><b>${esc(x.short||x.name)}</b><small class="sub" style="display:block">${esc(x.name)}</small></span><span class="sub">👩‍🏫 ${esc(tName(x))}</span></div>`).join('')}</div>`;
   else if(S.tab==='grades')body=`<h2>درجاتي</h2><p class="sub" style="font-size:.85rem">درجاتك أنتِ فقط، ولا يراها غيرك.</p>${gradesView()}`;
   else if(S.tab==='msg')body=msgsView();
   else if(S.tab==='exc')body=`<h2>أعذاري</h2>${mineView()||'<p class="sub">لم ترسلي أي عذر بعد.</p>'}<div class="row2"><button class="btn" data-a="excuse">📩 إرسال عذر جديد</button></div>`;
-  else body=`<div class="greet"><h1>${esc(hello)}</h1><p class="sub">${esc(enc)}</p></div>${top}${offN}
-     ${anns.length||cxs.length?`<div class="wk">${cxs.map(c=>{const m=(c.sec.meetings||[]).find(x=>x.id===c.meeting_id);return `<div class="ann cx" style="display:block">❌ أُلغيت محاضرة ${esc(c.sec.short||c.sec.name)} ${esc(DAYS[pd(c.date).getDay()]+' '+fD.format(pd(c.date)))}${m?' '+t12(m.start):''}${c.reason?' · '+esc(c.reason):''}</div>`}).join('')}${anns.map(a=>`<div class="ann" style="display:block">📢 ${esc(a.body)}<small class="num">${esc(fD.format(new Date(a.created_at)))}</small></div>`).join('')}</div>`:''}
+  else body=`${anns.map(a=>{const x=mine.find(z=>z.id===a.section_id)||mine.find(z=>z.owner===a.owner);return `<div class="annb">${newA.includes(a)?'<span class="nw">جديد</span>':''}📢 ${esc(a.body)}<small class="num">${esc(x?tName(x):'')}${a.section_id&&x?' · '+esc(x.short||x.name):''} · ${esc(fD.format(new Date(a.created_at)))}</small></div>`}).join('')}
+     <div class="greet"><h1>${esc(hello)}</h1><p class="sub">${esc(enc)}</p></div>${top}${offN}
+     ${cxs.length?`<div class="wk">${cxs.map(c=>{const m=(c.sec.meetings||[]).find(x=>x.id===c.meeting_id);return `<div class="ann cx" style="display:block">❌ أُلغيت محاضرة ${esc(c.sec.short||c.sec.name)} ${esc(DAYS[pd(c.date).getDay()]+' '+fD.format(pd(c.date)))}${m?' '+t12(m.start):''}${c.reason?' · '+esc(c.reason):''}</div>`}).join('')}</div>`:''}
      <div class="row2"><button class="btn" data-a="excuse">📩 عندي عذر</button></div>
      <div class="dh"><span class="k">${esc(d.k)}</span><p class="t">${esc(d.t)}</p><div class="s2"><span>${esc(d.s)}</span><button data-a="dh">التالي ←</button></div></div>`;
-  v.innerHTML=`${bar}<section class="card" style="margin-top:12px">${qb}${body}${out}</section>`;
+  const nbar=S.tab!=='home'&&unseenA.length?`<button class="annbar" data-a="stab" data-v="home"><span>📢 ${unseenA.length===1?'إعلان جديد من أستاذتك':unseenA.length+' إعلانات جديدة'}</span><span>عرض ←</span></button>`:'';
+  v.innerHTML=`${bar}${nbar}<section class="card" style="margin-top:12px">${qb}${body}${out}</section>`;
+  if(S.tab==='home'&&unseenA.length){unseenA.forEach(a=>S.fresh.add(a.id));ls.set('exc.annseen',[...new Set([...seenA,...anns.map(a=>a.id)])].slice(-200))}
   if(S.tab==='msg'&&S.mthread){const ch=document.getElementById('chat');if(ch)ch.scrollTop=ch.scrollHeight}
   if(S.tab==='exc'){const ids=S.mine.filter(e=>e.status!=='pending').map(e=>e.id);ls.set('exc.seen',ids)}
   if(S.tab==='grades'&&S.grades.length)ls.set('exc.gseen',1);
