@@ -6,7 +6,7 @@ const isStudentEmail=e=>String(e||'').toLowerCase().endsWith('@'+String(CFG.stud
 const KIND_EMO={'مرضي':'🤒','وفاة':'🖤','ظرف عائلي':'🏠','موعد رسمي':'📄','أخرى':'✏️'};
 const REJECT=['لا يوجد ما يثبت','خارج المدة المسموحة','العذر غير مقبول','التاريخ غير صحيح'];
 const C={sb:null,user:null,owner:false,status:'off',err:'',pending:new Set(lsGet('reg.cloud.pending')||[]),lastPull:lsGet('reg.cloud.lastPull')||'',
-  ex:[],exLoaded:false,ann:lsGet('reg.ann')||[],annOpen:false,exAt:0,exFilter:'pending',rejFor:null,busy:false,applying:false,authMode:'in',q:lsGet('reg.cloud.q')||[],ver:{}};
+  ex:[],exLoaded:false,ann:lsGet('reg.ann')||[],annOpen:false,exAt:0,exFilter:'pending',rejFor:null,busy:false,applying:false,authMode:'in',grades:{},gImp:null,gBusy:null,q:lsGet('reg.cloud.q')||[],ver:{}};
 window.CLOUD=C;
 /* excuses live in Supabase only — never stored on the teacher's phone */
 try{localStorage.removeItem('reg.exc');localStorage.removeItem('reg.excAt')}catch(_){}
@@ -67,7 +67,7 @@ async function sync(full){
       const {data,error}=await q;if(error)throw error;if(!data||!data.length)break;
       C.applying=true;try{for(const r of data){if(C.pending.has(r.path))continue;LDB.applyRemote(r.path,r.deleted?null:r.data)}}finally{C.applying=false}
       C.lastPull=data[data.length-1].updated_at;lsSet('reg.cloud.lastPull',C.lastPull);if(data.length<1000)break}
-    await loadExcuses();await loadAnn();
+    await loadExcuses();await loadAnn();await loadGrades();
     C.status='ok';C.err='';
   }catch(e){C.status='error';C.err=(e&&e.message)||'تعذّرت المزامنة'}
   finally{C.busy=false;render()}
@@ -117,6 +117,74 @@ window.addEventListener('online',()=>{if(C.user)afterLogin()});
 window.addEventListener('offline',()=>{if(C.sb){C.status='offline';render()}});
 setInterval(()=>{if(C.owner&&online())sync()},60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&C.owner&&online())sync()});
+
+/* ---- grades: Excel → each student sees only her own row ---- */
+async function loadGrades(){
+  const {data,error}=await C.sb.from('grades').select('section_id,title,max,uid,updated_at').eq('owner',C.user.id).limit(20000);if(error)return;
+  const g={};for(const r of data||[]){const k=r.section_id;(g[k]=g[k]||{});const t=(g[k][r.title]=g[k][r.title]||{title:r.title,max:r.max,n:0,at:r.updated_at});t.n++;if(r.updated_at>t.at)t.at=r.updated_at}
+  C.grades=g;
+}
+const numOf=v=>{if(v===''||v==null)return null;const n=+normDigits(String(v)).replace(/[٫,]/g,'.');return Number.isFinite(n)?n:null};
+async function parseGrades(file,c){
+  C.gBusy=c.id;S.openCls=c.id;render();
+  try{await loadXLSX();const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const sheets=[];
+    const roster=new Map((c.students||[]).map(s=>[normId(s.uid),s]));
+    for(const sn of wb.SheetNames){
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:''}).map(r=>r.map(v=>typeof v==='string'?normDigits(v):v));
+      const W=Math.max(0,...rows.map(r=>r.length));let idCol=-1,best=0;
+      for(let j=0;j<W;j++){const k=rows.filter(r=>/^\d{7,10}$/.test(String(r[j]??'').trim())).length;if(k>best){best=k;idCol=j}}
+      if(idCol<0||best<1)continue;
+      const first=rows.findIndex(r=>/^\d{7,10}$/.test(String(r[idCol]??'').trim()));
+      const head=(rows[first-1]||[]).map(x=>String(x??'').trim()),data=rows.filter(r=>/^\d{7,10}$/.test(String(r[idCol]??'').trim()));
+      let nameCol=-1,nb=0;for(let j=0;j<W;j++){const k=data.filter(r=>AR.test(String(r[j]??''))&&/\s/.test(String(r[j]??''))).length;if(k>nb){nb=k;nameCol=j}}
+      const TOT=/المجموع|الإجمالي|الاجمالي|الدرجة الكلية|total/i,SKIP=/^(م|#|تسلسل|مسلسل|الرقم|رقم الطالب|الرقم الجامعي|اسم الطالب|اسم الطالبة|الاسم)$/;
+      let totCol=-1;const items=[];
+      for(let j=0;j<W;j++){if(j===idCol||j===nameCol)continue;const h=head[j]||'';if(!h||SKIP.test(h))continue;
+        if(!data.some(r=>numOf(r[j])!=null))continue;if(TOT.test(h)&&totCol<0)totCol=j;else items.push([j,h])}
+      const out=[];
+      for(const r of data){const it={};let sum=0,any=false;for(const[j,h]of items){const v=numOf(r[j]);it[h]=v;if(v!=null){sum+=v;any=true}}
+        const tot=totCol>=0?numOf(r[totCol]):(any?Math.round(sum*100)/100:null);if(tot==null&&!any)continue;
+        out.push({uid:normId(r[idCol]),name:String(r[nameCol]??'').trim(),items:it,total:tot})}
+      if(!out.length)continue;
+      const maxGuess=(head.join(' ').match(/من\s*(\d{1,3})|\/\s*(\d{1,3})/)||[]).slice(1).find(Boolean);
+      sheets.push({title:sn.trim(),max:maxGuess?+maxGuess:'',rows:out,cols:items.map(x=>x[1]),hasTot:totCol>=0,on:true,
+        inRoster:out.filter(x=>roster.has(x.uid)).length})}
+    if(!sheets.length)toast('لم أجد درجات في الملف. تأكدي أن فيه عمود الرقم الجامعي وأن خانات الدرجات معبّأة.',5000);
+    else C.gImp={cid:c.id,sheets};
+  }catch(e){toast(navigator.onLine===false?'قراءة Excel تحتاج اتصالًا أول مرة':'تعذّرت قراءة ملف الدرجات',4000)}
+  C.gBusy=null;render();
+}
+async function publishGrades(){
+  const G=C.gImp;if(!G)return;if(!online()){toast('نشر الدرجات يحتاج اتصالًا بالإنترنت');return}
+  const me=C.user.id;let n=0;
+  try{for(const sh of G.sheets.filter(x=>x.on)){const title=(sh.title||'درجات').trim().slice(0,60),max=numOf(sh.max);
+      const rows=sh.rows.map(r=>({owner:me,section_id:G.cid,uid:r.uid,title,items:r.items,total:r.total,max,published:true}));
+      for(let i=0;i<rows.length;i+=500){const {error}=await C.sb.from('grades').upsert(rows.slice(i,i+500),{onConflict:'section_id,title,uid'});if(error)throw error}
+      const keep=rows.map(r=>r.uid).filter(Boolean);
+      if(keep.length){const {error}=await C.sb.from('grades').delete().eq('owner',me).eq('section_id',G.cid).eq('title',title).not('uid','in','('+keep.join(',')+')');if(error)throw error}
+      n++}
+    C.gImp=null;await loadGrades();toast(`نُشرت ${n===1?'الدرجات':n+' تقييمات'} للطالبات ✓`);
+  }catch(e){toast('تعذّر نشر الدرجات: '+((e&&e.message)||''),5000)}
+  render();
+}
+window.gradesBlock=function(c){
+  const list=Object.values(C.grades[c.id]||{});
+  let h=`<div class="sec"><span class="lbl">الدرجات (تظهر لكل طالبة درجتها فقط)</span>`;
+  if(!C.owner)return h+`<span class="hint">سجّلي الدخول من «الربط بالإنترنت» لنشر الدرجات.</span></div>`;
+  if(list.length)h+=`<div class="slist">${list.map(t=>`<div class="srow" style="grid-template-columns:1fr auto auto"><span><b>${esc(t.title)}</b> <span class="hint num">· ${t.n} طالبة${t.max?' · من '+nf(t.max):''}</span></span><span></span>
+    <button class="lnk red" data-act="gDel" data-c="${esc(c.id)}" data-t="${esc(t.title)}">${S.armed==='g:'+c.id+t.title?'تأكيد الحذف':'حذف'}</button></div>`).join('')}</div>`;
+  const G=C.gImp&&C.gImp.cid===c.id?C.gImp:null;
+  if(C.gBusy===c.id)h+='<div class="busy"><span class="spin"></span>أقرأ ملف الدرجات…</div>';
+  else if(G){h+=G.sheets.map((sh,i)=>`<div class="card impcard ${sh.on?'':'off'}"><label class="chk"><input type="checkbox" data-gi="on" data-i="${i}"${sh.on?' checked':''}> <b>${esc(sh.title)}</b></label>
+      <div class="inline"><div class="f"><label>اسم التقييم (يظهر للطالبات)</label><input value="${esc(sh.title)}" data-gi="title" data-i="${i}"></div>
+      <div class="f" style="max-width:130px;min-width:100px"><label>الدرجة من</label><input type="number" min="0" inputmode="decimal" value="${esc(sh.max)}" data-gi="max" data-i="${i}" placeholder="مثلًا 20"></div></div>
+      <div class="preview num">${sh.rows.length} طالبة لها درجة${sh.inRoster<sh.rows.length?` · <b style="color:var(--warn)">${sh.rows.length-sh.inRoster} غير موجودات في كشف الشعبة</b>`:' · كلهن في الكشف ✓'}<br>
+      الأعمدة: ${esc(sh.cols.join('، '))}${sh.hasTot?' + المجموع':' (المجموع يُحسب تلقائيًا)'}<br>
+      مثال: ${esc(sh.rows.slice(0,2).map(r=>(r.name.split(' ')[0]||r.uid)+' = '+(r.total??'—')).join('، '))}</div></div>`).join('')+
+      `<div class="inline"><button class="btn pri" data-act="gPub">نشر للطالبات</button><button class="btn" data-act="gCancel">إلغاء</button></div>`}
+  else h+=`<div class="inline"><span class="filebtn btn"><span>رفع ملف درجات (Excel)</span><input type="file" accept=".xlsx,.xls,.csv" data-chg="gfile" data-c="${esc(c.id)}" aria-label="ملف الدرجات"></span><span class="hint">كل صفحة في الملف = تقييم (مثل: اختبار نصفي)</span></div>`;
+  return h+'</div>';
+};
 
 /* ---- header ---- */
 const _renderHead=renderHead;
@@ -223,6 +291,12 @@ vManage=function(){let h=_vManage();
 /* ---- actions ---- */
 document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-act]');if(!t)return;const a=t.dataset.act;
   switch(a){
+  case 'gPub':publishGrades();break;
+  case 'gCancel':C.gImp=null;render();break;
+  case 'gDel':{const k='g:'+t.dataset.c+t.dataset.t;S.openCls=t.dataset.c;if(S.armed!==k){S.armed=k;render();return}S.armed=null;
+    if(!online()){toast('الحذف يحتاج اتصالًا');break}
+    const {error}=await C.sb.from('grades').delete().eq('owner',C.user.id).eq('section_id',t.dataset.c).eq('title',t.dataset.t);
+    if(error){toast('تعذّر الحذف');break}await loadGrades();toast('حُذفت الدرجات');render();break}
   case 'annToggle':C.annOpen=!C.annOpen;render();break;
   case 'annPost':{const body=document.getElementById('anb').value.trim();if(body.length<2){toast('اكتبي نص الإعلان');return}
     const row={body,section_id:document.getElementById('ans').value||null,until:document.getElementById('anu').value||null};
@@ -252,6 +326,10 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   case 'cDays':{const v=Math.max(1,parseInt(document.getElementById('xd').value,10)||7);write(()=>db.doc('config/settings').set({...S.settings,excuseDays:v}),'حُفظ');break}
   }
 });
+
+document.addEventListener('change',ev=>{const t=ev.target;
+  if(t.dataset.chg==='gfile'){const c=cById(t.dataset.c);if(t.files&&t.files[0])parseGrades(t.files[0],c);return}
+  const k=t.dataset.gi;if(k&&C.gImp){const sh=C.gImp.sheets[+t.dataset.i];if(k==='on'){sh.on=t.checked;render()}else sh[k]=t.value}});
 
 /* ---- styles ---- */
 const st=document.createElement('style');st.textContent=`

@@ -169,3 +169,27 @@ create policy "teacher reads files" on storage.objects for select to authenticat
   using (bucket_id = 'excuse-files' and exists(select 1 from public.sections_public sp where sp.id = (storage.foldername(name))[1] and sp.owner = auth.uid()));
 create policy "teacher deletes files" on storage.objects for delete to authenticated
   using (bucket_id = 'excuse-files' and exists(select 1 from public.sections_public sp where sp.id = (storage.foldername(name))[1] and sp.owner = auth.uid()));
+
+-- ===== الدرجات: كل طالبة ترى درجاتها فقط، وكل أستاذة تنشر درجات شعبها =====
+create table if not exists public.grades(
+  id uuid primary key default gen_random_uuid(),
+  owner uuid not null default auth.uid(),
+  section_id text not null,
+  uid text not null,
+  title text not null,
+  items jsonb,
+  total numeric,
+  max numeric,
+  published boolean not null default true,
+  updated_at timestamptz not null default now(),
+  unique (section_id, title, uid));
+create index if not exists grades_uid on public.grades(uid);
+create index if not exists grades_owner on public.grades(owner, section_id);
+drop trigger if exists grades_touch on public.grades;
+create trigger grades_touch before insert or update on public.grades for each row execute function public.touch();
+alter table public.grades enable row level security;
+drop policy if exists "student sees own grades" on public.grades;
+drop policy if exists "my grades" on public.grades;
+create policy "student sees own grades" on public.grades for select to authenticated
+  using (published and public.is_student() and uid = split_part(lower(auth.jwt()->>'email'),'@',1));
+create policy "my grades" on public.grades for all to authenticated using (owner = auth.uid()) with check (owner = auth.uid() and not public.is_student());

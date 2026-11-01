@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ٩</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٠</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -823,7 +823,7 @@ function vManage(){
         ${S.canWrite?`<div style="margin-top:6px"><button class="lnk" data-act="useMeta" data-c="${esc(c.id)}">تسمية الشعبة: «${esc((m.sec?'شعبة '+m.sec+' — ':'')+m.course)}»</button></div>`:''}</div>`})():''}
       ${P?`<div class="preview num">جاهز للإضافة: <b>${P.list.length}</b> طالبة${P.dup?` (تُجوهلت ${P.dup} مكررة)`:''} — ${esc(P.list.slice(0,3).map(x=>x.name).join('، '))}${P.list.length>3?'…':''}</div>`:''}
       <div class="inline"><button class="btn ${P&&rosterWarn(c,P)?'danger'+(S.armed==='add:'+c.id?' armed':''):'pri'}" data-act="addStu" data-c="${esc(c.id)}">${P?(rosterWarn(c,P)?(S.armed==='add:'+c.id?'تأكيد: إضافتهن رغم التنبيه':'إضافة رغم التنبيه'):'إضافة '+P.list.length+' طالبة'):'إضافة الأسماء الملصقة'}</button><span style="flex:1"></span><button class="btn danger ${S.armed==='cls:'+c.id?'armed':''}" data-act="delCls" data-c="${esc(c.id)}">${S.armed==='cls:'+c.id?'تأكيد: حذف الشعبة وسجلاتها':'حذف الشعبة'}</button></div>`:''}
-      </div></div></details>`}
+      </div>${window.gradesBlock?gradesBlock(c):''}</div></details>`}
   h+='</div></section>';
   h+=`<section class="sec"><h2>قواعد الحرمان والانقطاع</h2><div class="card form"><div class="setgrid">
     ${[['minAttend','أدنى نسبة حضور (%)',100],['warn1','الإنذار الأول عند غياب (%)',100],['warn2','الإنذار الثاني عند غياب (%)',100],['cutWeeks','الانقطاع: أسابيع متصلة',20],['lateEq','كل كم تأخير = غياب (0 = لا)',20]].map(([k,l,mx])=>`<div class="f"><label for="st-${k}">${l}</label><input id="st-${k}" type="number" min="0" max="${mx}" inputmode="numeric" value="${st[k]}"${ro}></div>`).join('')}
@@ -1084,7 +1084,7 @@ async function saveImport(){
 document.addEventListener('click',async e=>{
   const t=e.target.closest('[data-tab],[data-act]');if(!t)return;
   if(t.dataset.tab&&!t.dataset.act){S.tab=t.dataset.tab;S.armed=null;render();window.scrollTo(0,0);return}
-  const a=t.dataset.act;if(!['clearSample','delCls','delSheet','newTerm','addStu'].includes(a))S.armed=null;
+  const a=t.dataset.act;if(!['clearSample','delCls','delSheet','newTerm','addStu','gDel'].includes(a))S.armed=null;
   const c=t.dataset.c&&cById(t.dataset.c),I=S.imp;
   switch(a){
   case 'tab':S.tab=t.dataset.tab;render();window.scrollTo(0,0);return;
