@@ -194,7 +194,7 @@ renderHead=function(stats){_renderHead(stats);
     const t=C.status==='ok'?(pend?'جارٍ الرفع':'متزامن'):C.status==='syncing'?'جارٍ المزامنة':C.status==='offline'?(pend?`${pend} بانتظار النت`:'بدون اتصال'):C.status==='login'?'غير مسجّلة':C.status==='error'?'خطأ في الاتصال':'على الجهاز';
     net.className='net'+(C.status==='ok'&&!pend?'':' off');net.innerHTML='<i></i>'+t;
     if(C.user){const b=document.createElement('button');b.className='pill '+(S.armed==='out'?'deny':'muted');b.dataset.act='cOut';b.title=C.user.email||'';
-      b.textContent=S.armed==='out'?'تأكيد الخروج':'خروج';net.after(b)}}
+      b.textContent=S.armed==='out'?'تأكيد الخروج':'⎋ خروج';net.after(b)}}
   const n=C.ex.filter(e=>e.status==='pending').length,b=document.querySelector('.tabs button[data-tab="exc"]');
   if(b){b.querySelector('.dot')?.remove();if(n&&S.tab!=='exc'){const s=document.createElement('span');s.className='dot num';s.style.background='var(--accent)';s.textContent=n;b.appendChild(s)}}
 };
@@ -361,7 +361,8 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
     await C.sb.auth.signOut();C.owner=false;C.user=null;
     LDB.load({});C.lastPull='';lsSet('reg.cloud.lastPull','');lsSet('reg.cloud.uid','');C.pending.clear();savePending();
     C.ex=[];C.exLoaded=false;C.ann=[];lsSet('reg.ann',[]);C.q=[];saveQ();C.grades={};S.sheet=null;S.tab='home';C.status='login';
-    render();window.scrollTo(0,0);toast('تم تسجيل الخروج');break}
+    try{localStorage.removeItem('reg.role')}catch(_){}
+    render();window.scrollTo(0,0);const rb=document.getElementById('role');if(rb)rb.hidden=false;toast('تم تسجيل الخروج');break}
   case 'cSync':sync(true);break;
   case 'cDays':{const v=Math.max(1,parseInt(document.getElementById('xd').value,10)||7);write(()=>db.doc('config/settings').set({...S.settings,excuseDays:v}),'حُفظ');break}
   }

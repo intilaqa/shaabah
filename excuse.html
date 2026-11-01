@@ -111,7 +111,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ١٢</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ١٣</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -265,7 +265,7 @@ function portal(){
   if(!S.user)return loginView();
   const v=$('view');$('bar').style.width='0';$('step').textContent='';$('brand').lastChild.textContent='شعبتي';
   if(S.sections===null){v.innerHTML='<section class="card"><p class="sub"><span class="spin" style="border-top-color:var(--accent)"></span>أبحث عن شعبك…</p></section>';return}
-  const out=`<p class="sub" style="font-size:.8rem">داخلة بـ <span dir="ltr" class="num">${esc(S.user.email)}</span> · <button class="back" style="padding:0;font-size:.8rem;text-decoration:underline" data-a="lOut">خروج</button></p>`;
+  const out=`<p class="sub" style="font-size:.8rem">داخلة بـ <span dir="ltr" class="num">${esc(S.user.email)}</span> </p><button class="btn ghost" style="width:100%" data-a="lOut">${S.outArmed?'اضغطي مرة ثانية للتأكيد':'⎋ تسجيل الخروج'}</button>`;
   const mine=S.sections;
   if(!mine.length){v.innerHTML=`<section class="card"><h1>أهلًا بك 🌿</h1>${S.err?`<div class="err">${esc(S.err)}</div>`:`<p class="sub">رقمك الجامعي <b class="num">${esc(S.uid)}</b> غير موجود حاليًا في كشوف أي أستاذة تستخدم التطبيق.</p><p class="sub">إذا كنتِ مسجّلة في شعبة، اطلبي من أستاذتك رفع كشف الشعبة في التطبيق، ثم أعيدي فتح الصفحة.</p>`}
     <div class="row2"><button class="btn ghost" data-a="reload">تحديث</button></div>${out}</section>`;return}
@@ -351,7 +351,9 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-a]')
     const {data,error}=await sb.auth.verifyOtp({email:S.login.email,token:code,type:'email'});
     S.login.busy=false;if(error||!data||!data.session){S.login.err='الرمز غير صحيح أو انتهت صلاحيته.';render();return}
     setUser(data.session.user);return}
-  if(a==='lOut'){await sb.auth.signOut();S.user=null;S.mine=[];ls.set('exc.mine',[]);ls.set('exc.cache',null);ls.set('exc.grades',[]);S.grades=[];S.sections=null;S.ann=[];S.name='';S.login={step:'email',email:'',busy:false,err:''};render();return}
+  if(a==='lOut'){if(!S.outArmed){S.outArmed=true;render();setTimeout(()=>{S.outArmed=false;if(S.user)render()},4000);return}
+    try{await sb.auth.signOut()}catch(_){}S.user=null;S.mine=[];ls.set('exc.mine',[]);ls.set('exc.cache',null);ls.set('exc.grades',[]);ls.set('exc.me',null);
+    try{localStorage.removeItem('reg.role')}catch(_){}location.href='index.html';return}
   if(a==='iamT'){try{localStorage.setItem('reg.role','t')}catch(_){}location.href='index.html?role=t';return}
   if(a==='myT'){S.myT=t.dataset.v;ls.set('exc.teacher',S.myT);render();return}
   if(a==='flush'){flushQ();return}
