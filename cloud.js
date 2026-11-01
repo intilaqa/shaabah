@@ -147,7 +147,7 @@ async function parseGrades(file,c){
         out.push({uid:normId(r[idCol]),name:String(r[nameCol]??'').trim(),items:it,total:tot})}
       if(!out.length)continue;
       const maxGuess=(head.join(' ').match(/من\s*(\d{1,3})|\/\s*(\d{1,3})/)||[]).slice(1).find(Boolean);
-      sheets.push({title:sn.trim(),max:maxGuess?+maxGuess:'',rows:out,cols:items.map(x=>x[1]),hasTot:totCol>=0,on:true,
+      sheets.push({title:sn.trim(),max:maxGuess?+maxGuess:(/نصفي|ميد|mid/i.test(sn)?30:''),rows:out,cols:items.map(x=>x[1]),hasTot:totCol>=0,on:true,
         inRoster:out.filter(x=>roster.has(x.uid)).length})}
     if(!sheets.length)toast('لم أجد درجات في الملف. تأكدي أن فيه عمود الرقم الجامعي وأن خانات الدرجات معبّأة.',5000);
     else C.gImp={cid:c.id,sheets};
