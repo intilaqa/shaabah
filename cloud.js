@@ -333,6 +333,7 @@ async function decide(id,status,reason){
       if(nv){const body={...d,marks:{...d.marks,[s.id]:nv},updatedAt:new Date().toISOString()};delete body.id;queue(d.id,body);
         note=nv==='e'?' — وتحوّلت في السجل إلى «غائبة بعذر»':' — وأُعيدت في السجل إلى «غائبة»'}}
     else if(status==='approved')note=' — المحاضرة لم تُحضّر بعد، وستظهر «غائبة بعذر» تلقائيًا عند تحضيرها'}
+  if(status!=='pending'&&C.ex.length&&!C.ex.some(x=>x.status==='pending')&&window.cheer)setTimeout(()=>cheer('صندوق الأعذار فاضي!','راجعتِ كل الأعذار 🤍'),600);
   toast((status==='approved'?'اعتُمد العذر ✓':status==='rejected'?'رُفض العذر':'أُعيد العذر للانتظار')+note+(online()?'':' (يُرفع عند الاتصال)'),note?6000:2400);C.rejFor=null;render();
 }
 async function openFile(id){const e=C.ex.find(x=>x.id===id);if(!e||!e.file_path)return;

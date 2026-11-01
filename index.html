@@ -128,6 +128,34 @@ h2{font-family:var(--f-hero);font-size:1.08rem;font-weight:600;margin:0}
 .greet h2{font-family:"Almarai","IBM Plex Sans Arabic",sans-serif;font-size:clamp(1.45rem,5.6vw,1.9rem);font-weight:800;line-height:1.35;text-wrap:balance}
 .greet p{margin:6px 0 0;font-size:.95rem;color:var(--ink);opacity:.85;max-width:44ch}
 .greet .when{font-size:.8rem;color:var(--muted);margin-top:8px;opacity:1}
+.ring{position:relative;display:inline-block;padding:7px;align-self:center;line-height:0}.ring .plate{line-height:1.2}
+.ring svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring .tr{fill:none;stroke:var(--line);stroke-width:5}.ring .pr{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round}
+.ring.hot .pr{stroke:#e0a33c}.ring.hot .plate{animation:knock .9s ease-in-out infinite}
+.ring .mins{position:absolute;bottom:-6px;inset-inline-start:50%;transform:translateX(50%);background:var(--accent);color:#fff;border-radius:999px;padding:0 9px;font-size:.72rem;font-weight:700;line-height:1.6}
+.ring.hot .mins{background:#e0a33c}
+.go.hurry{color:#c2410c;animation:pulse 1s ease-in-out infinite}
+@keyframes knock{0%,100%{transform:rotate(0)}20%{transform:rotate(-3deg)}40%{transform:rotate(3deg)}60%{transform:rotate(-2deg)}80%{transform:rotate(1deg)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.track{grid-column:1/-1;position:relative;height:58px;border-radius:12px;background:linear-gradient(180deg,transparent 70%,var(--bg) 70%);overflow:hidden}
+.track .road{position:absolute;inset-inline:10px;bottom:9px;border-bottom:3px dashed var(--line-strong)}
+.track .goal{position:absolute;bottom:10px;inset-inline-end:10px;width:26px;height:40px;border-radius:5px;background:var(--accent);box-shadow:inset 0 0 0 3px #17707a}
+.track .goal::after{content:"";position:absolute;width:5px;height:5px;border-radius:50%;background:#f2b552;inset-inline-start:5px;top:21px}
+.track .runner{position:absolute;bottom:10px;inset-inline-start:var(--x,10%);width:34px;height:42px}
+.runner .bob{animation:bob .42s ease-in-out infinite}
+.runner .lg1{transform-origin:17px 26px;animation:leg .42s ease-in-out infinite}.runner .lg2{transform-origin:17px 26px;animation:leg .42s ease-in-out infinite reverse}
+.runner .bk{animation:flap .42s ease-in-out infinite;transform-origin:22px 18px}
+.track .steam{position:absolute;bottom:44px;inset-inline-start:calc(var(--x,10%) - 2px);width:6px;height:10px;border-radius:50%;border-inline-start:2px solid var(--line-strong);opacity:0;animation:steam 1.4s ease-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes leg{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-20deg)}}
+@keyframes flap{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}
+@keyframes steam{0%{opacity:0;transform:translateY(4px)}30%{opacity:.8}100%{opacity:0;transform:translateY(-12px)}}
+.cf{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:90;pointer-events:none;animation:fall var(--d,2.8s) cubic-bezier(.2,.6,.4,1) forwards}
+@keyframes fall{to{transform:translate(var(--dx,0),105vh) rotate(var(--r,540deg));opacity:.9}}
+.cheer{position:fixed;inset-inline:16px;top:40%;z-index:91;margin:0 auto;max-width:360px;text-align:center;background:linear-gradient(135deg,#fde8c8,#cdeee9);border-radius:22px;padding:22px 18px;box-shadow:0 30px 60px -30px rgba(0,0,0,.5);font-weight:700;font-size:1.15rem;animation:cheer 2.8s cubic-bezier(.2,1.4,.4,1) forwards;pointer-events:none}
+.cheer small{display:block;font-weight:500;font-size:.85rem;color:var(--muted);margin-top:4px}
+@keyframes cheer{0%{transform:scale(.6);opacity:0}12%{transform:scale(1);opacity:1}82%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
+@media (prefers-reduced-motion:reduce){.ring.hot .plate,.go.hurry,.runner *,.track .steam{animation:none!important}.cf{display:none}}
 .next{position:relative;z-index:1;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;background:var(--surface);border-radius:16px;padding:12px;box-shadow:0 6px 20px -12px rgba(0,0,0,.35)}
 .plate{background:var(--plate);color:var(--plate-ink);border-radius:12px;padding:10px 14px;min-width:96px;text-align:center;display:flex;flex-direction:column;gap:2px}
 .plate small{font-size:.7rem;color:var(--plate-sub);letter-spacing:.04em;font-weight:600}
@@ -364,7 +392,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><p style="font-size:.7rem;opacity:.6">الإصدار ٤٢</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><p style="font-size:.7rem;opacity:.6">الإصدار ٤٣</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -523,7 +551,7 @@ async function flush(){
 window.addEventListener('online',()=>{flush();render()});
 window.addEventListener('offline',()=>render());
 setInterval(()=>{if(Object.keys(S.outbox).length)flush()},20000);
-setInterval(()=>{if(S.tab==='home')render()},60000);
+setInterval(()=>{const a=document.activeElement;if(S.tab==='home'&&!(a&&/INPUT|TEXTAREA/.test(a.tagName)))render()},30000);
 let cacheT;function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>lsSet(LS.cache,{classes:S.classes,att:S.att,settings:S.settings,at:Date.now()}),800)}
 
 /* ---------- header ---------- */
@@ -582,7 +610,16 @@ function vDhikr(h){const l=dhikrList(h);if(dIdx==null){let saved=null;try{saved=
   const d=l[dIdx%l.length];setTimeout(()=>dAnim=false,0);
   return `<section class="dhikr" aria-live="polite"><span class="kind">${esc(d.k)}</span><p class="txt ${dAnim?'fade':''}" id="dtx">${esc(d.t)}</p>
    <div class="row2"><span class="src">${esc(d.s||'')}</span><span class="cnt">${d.n?`<button class="tap" data-act="dcount" aria-label="تسبيح">${dCount?dCount.toLocaleString('ar-SA-u-nu-latn'):'سبّح'}</button>`:''}<button class="lnk" data-act="dnext">التالي ←</button></span></div></section>`}
-function encourage(h,dow,tod){const L=ENC[fem()?'f':'m'][tod];const pick=L[Math.floor(Date.now()/36e5)%L.length];const dl=DAYLINE[dow];return dl&&Math.floor(Date.now()/36e5)%2?dl:pick}
+function funLine(h,dow){
+  const nowM=h*60+new Date().getMinutes(),f=fem(),L=todaysMeets(dow).filter(x=>!(allAtt().find(d=>d.id===key(x.c.id,ymd(new Date()),x.m.id))||{}).cancelled);
+  const up=L.find(x=>mins(x.m.start)>nowM),last=L.length&&Math.max(...L.map(x=>mins(endOf(x.m))));
+  if(dow>4)return f?'إجازة سعيدة، القاعة نايمة اليوم':'إجازة سعيدة، القاعة نايمة اليوم';
+  if(up&&mins(up.m.start)-nowM<=30)return 'خذي نفس، الشعبة بالطريق';
+  if(L.length&&nowM>=last)return f?'خلصتِ! تستاهلين قهوة ثانية':'خلصت! تستاهل قهوة ثانية';
+  if(nowM>=300&&nowM<480)return 'القهوة جاهزة؟ الطالبات بالطريق';
+  return '';
+}
+function encourage(h,dow,tod){const fl=funLine(h,dow);if(fl)return fl;const L=ENC[fem()?'f':'m'][tod];const pick=L[Math.floor(Date.now()/36e5)%L.length];const dl=DAYLINE[dow];return dl&&Math.floor(Date.now()/36e5)%2?dl:pick}
 function vHome(stats){
   const now=new Date(),h=now.getHours(),dow=now.getDay(),today=ymd(now),nowM=h*60+now.getMinutes(),t=term();
   const tod=h<11?'morning':h<15?'noon':h<18?'after':'night';
@@ -603,9 +640,12 @@ function vHome(stats){
     if(cur){const left=mins(endOf(cur.m))-nowM;
       next=`<div class="next">${plate(cur)}<div><div class="go">${g('أنتِ الآن في المحاضرة','أنت الآن في المحاضرة')}</div><div class="what num">${esc(cur.c.name)} · تنتهي ${t12(endOf(cur.m))} (بعد ${dur(left)})</div>
         <div class="acts"><button class="btn pri" data-act="open" data-c="${esc(cur.c.id)}" data-d="${today}" data-m="${esc(cur.m.id)}">${done(cur)?'مراجعة التحضير':'تحضير الآن'}</button></div></div></div>`}
-    else if(upc){const inM=mins(upc.m.start)-nowM;
-      next=`<div class="next">${plate(upc)}<div><div class="go">${upc.m.room?`يلا على قاعة <bdi class="rm">${esc(upc.m.room)}</bdi>`:'محاضرتك القادمة'}</div><div class="what num">${esc(upc.c.name)} · ${t12(upc.m.start)} · بعد ${dur(inM)}</div>
-        <div class="acts"><button class="btn" data-act="open" data-c="${esc(upc.c.id)}" data-d="${today}" data-m="${esc(upc.m.id)}">جهّز التحضير</button></div></div></div>`}
+    else if(upc){const inM=mins(upc.m.start)-nowM,soon=inM<=60,hot=inM<=5,prog=soon?Math.max(.04,1-inM/60):0;
+      const rp=soon?`<div class="ring ${hot?'hot':''}"><svg viewBox="0 0 104 104" preserveAspectRatio="none"><rect class="tr" x="3" y="3" width="98" height="98" rx="18" pathLength="100"/><rect class="pr" x="3" y="3" width="98" height="98" rx="18" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${(100-prog*100).toFixed(1)}"/></svg><span class="mins num">${inM} د</span>${plate(upc)}</div>`:plate(upc);
+      const px=(8+(1-inM/30)*72).toFixed(0);
+      const walk=inM<=30?`<div class="track" aria-hidden="true"><div class="road"></div><div class="goal"></div><span class="steam" style="--x:${px}%"></span><svg class="runner" style="--x:${px}%" viewBox="0 0 34 42"><g class="bob"><circle cx="17" cy="7" r="5.5" fill="#15262a"/><path d="M10.5 8q6.5-11 13 0v3q-6.5-3-13 0z" fill="#5b6c70"/><path d="M17 12v14" stroke="#17707a" stroke-width="5.5" stroke-linecap="round"/><g class="bk"><rect x="20" y="13" width="10" height="12" rx="1.5" fill="#f2b552"/><rect x="21" y="15.5" width="8" height="1.6" fill="#fff"/><rect x="21" y="19" width="8" height="1.6" fill="#fff"/></g><rect x="5" y="15" width="6" height="7" rx="1.5" fill="#fff" stroke="#5b6c70" stroke-width="1.4"/></g><path class="lg1" d="M17 26l-5 12" stroke="#15262a" stroke-width="3.2" stroke-linecap="round"/><path class="lg2" d="M17 26l5 12" stroke="#15262a" stroke-width="3.2" stroke-linecap="round"/></svg></div>`:'';
+      next=`<div class="next">${rp}<div><div class="go ${hot?'hurry':''}">${hot?'يلا، الطالبات وصلن القاعة!':upc.m.room?`يلا على قاعة <bdi class="rm">${esc(upc.m.room)}</bdi>`:'محاضرتك القادمة'}</div><div class="what num">${esc(upc.c.name)} · ${t12(upc.m.start)} · بعد ${dur(inM)}</div>
+        <div class="acts"><button class="btn" data-act="open" data-c="${esc(upc.c.id)}" data-d="${today}" data-m="${esc(upc.m.id)}">جهّز التحضير</button></div></div>${walk}</div>`}
     else if(list.length){const miss=list.filter(x=>!done(x));
       next=`<div class="next rest"><div><div class="go">${g('خلصتِ محاضرات اليوم، يعطيك العافية','خلصت محاضرات اليوم، يعطيك العافية')}</div><div class="what">${miss.length?`باقي <b class="num">${miss.length}</b> ${miss.length===1?'محاضرة لم تُحضّر':'محاضرات لم تُحضّر'} اليوم.`:'كل محاضرات اليوم مُحضّرة.'}</div>
         ${miss.length?`<div class="acts"><button class="btn pri" data-act="open" data-c="${esc(miss[0].c.id)}" data-d="${today}" data-m="${esc(miss[0].m.id)}">تحضير ${esc(miss[0].c.short||miss[0].c.name)}</button></div>`:''}</div></div>`}
@@ -1093,6 +1133,14 @@ function crossedMsg(before){
   const crossed=computeStats().filter(x=>{const b=before.get(skey(x));return b&&(x.level>b.level||(x.cut&&!b.cut))});
   return crossed.length?'تنبيه: '+crossed.map(x=>x.s.name.split(' ')[0]+' — '+(x.cut&&!before.get(skey(x)).cut?'انقطاع':LV[x.level].t)).join('، '):'';
 }
+function cheer(t,sub){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){toast(t);return}
+  const C=['#17707a','#5fc0c6','#f2b552','#e05a3a','#fde8c8','#2b7a4b'];
+  for(let i=0;i<60;i++){const e=document.createElement('i');e.className='cf';
+    e.style.cssText=`left:${Math.random()*100}vw;background:${C[i%C.length]};--dx:${(Math.random()*160-80).toFixed(0)}px;--r:${(Math.random()*900-450).toFixed(0)}deg;--d:${(2.2+Math.random()*1.4).toFixed(2)}s;animation-delay:${(Math.random()*.4).toFixed(2)}s`;
+    document.body.appendChild(e);setTimeout(()=>e.remove(),4200)}
+  const b=document.createElement('div');b.className='cheer';b.innerHTML=t+(sub?`<small>${sub}</small>`:'');document.body.appendChild(b);setTimeout(()=>b.remove(),2900);
+}
 function saveSheet(){
   const sh=S.sheet,c=cById(sh.classId),m=(c.meetings||[]).find(x=>x.id===sh.meetingId);
   const before=new Map(computeStats().map(x=>[skey(x),x]));
@@ -1101,6 +1149,11 @@ function saveSheet(){
   sh.dirty=false;sh.existing=true;queue(id,body);
   const msg=crossedMsg(before);render();
   toast(msg||('تم حفظ التحضير'),msg?5000:2400);
+  {const st=c.students||[],vals=st.map(x=>sh.marks[x.id]),dow=pd(sh.date).getDay(),today=ymd(new Date());
+   const allHere=st.length>=3&&vals.every(v=>!v||v==='p');
+   const dayDone=sh.date===today&&todaysMeets(dow).every(x=>allAtt().some(d=>d.id===key(x.c.id,today,x.m.id)));
+   const k='reg.cheer.'+id;
+   if(!msg&&(allHere||dayDone)&&!lsGet(k)){lsSet(k,1);setTimeout(()=>cheer(dayDone?'خلصتِ تحضير اليوم كله!':'الكل حاضر! شعبة نموذجية 🤍',dayDone?(allHere?'والكل حاضر بعد، ما شاء الله 🤍':'يعطيك العافية 🤍'):esc(c.short||c.name)),400)}}
 }
 function cancelLecture(reason){
   const sh=S.sheet,c=cById(sh.classId),m=(c.meetings||[]).find(x=>x.id===sh.meetingId);
