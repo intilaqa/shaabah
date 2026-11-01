@@ -133,7 +133,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢٨</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢٩</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -192,7 +192,7 @@ const IDB=(()=>{let p;const open=()=>p||(p=new Promise((ok,no)=>{const r=indexed
   const tx=(m,f)=>open().then(db=>new Promise((ok,no)=>{const t=db.transaction('q',m),st=t.objectStore('q');const r=f(st);t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error)}));
   return{put:v=>tx('readwrite',s=>s.put(v)),del:id=>tx('readwrite',s=>s.delete(id)),all:()=>tx('readonly',s=>s.getAll())}})();
 const netErr=e=>!e||e.name==='TypeError'||/fetch|network|Failed to|Load failed|timeout/i.test(String(e.message||e))||e.status===0;
-const whyErr=e=>{const m=String((e&&(e.message||e.error||e.details))||'');
+const whyErr=e=>{const m=String((e&&(e.message||e.error||e.details))||'');if(/row-level security/i.test(m))return (e&&e.where==='file'?'تعذّر رفع المرفق':'تعذّر حفظ العذر')+' (صلاحيات قاعدة البيانات). أخبري أستاذتك، أو جرّبي الإرسال بدون مرفق.';
   return /not in this section|not in roster/i.test(m)?'رقمك الجامعي غير موجود في كشف هذه الشعبة. تأكدي من الشعبة أو أخبري أستاذتك.'
     :/students only|JWT|jwt|auth/i.test(m)?'انتهت جلسة الدخول. اخرجي وادخلي بإيميلك الجامعي من جديد.'
     :/unknown section/i.test(m)?'هذه الشعبة لم تعد موجودة. حدّثي الصفحة.'
@@ -203,7 +203,7 @@ const dupe=e=>e&&(e.code==='23505'||/duplicate|already exists/i.test(e.message||
 async function upload(x){
   let file_path=null;
   if(x.file){file_path=`${x.row.section_id}/${x.id}.${x.file.type==='application/pdf'?'pdf':'jpg'}`;
-    const up=await sb.storage.from('excuse-files').upload(file_path,x.file,{contentType:x.file.type||'image/jpeg',upsert:false});if(up.error&&!dupe(up.error))throw up.error}
+    const up=await sb.storage.from('excuse-files').upload(file_path,x.file,{contentType:x.file.type||'image/jpeg',upsert:false});if(up.error&&!dupe(up.error)){up.error.where='file';throw up.error}}
   const {error}=await sb.from('excuses').insert({...x.row,id:x.id,file_path});if(error&&!dupe(error))throw error;
 }
 let flushing=false;

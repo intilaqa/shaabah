@@ -338,3 +338,23 @@ $$ begin
 end $$;
 drop trigger if exists att_notify on public.attendance_public;
 create trigger att_notify after insert or update on public.attendance_public for each row execute function public.att_notify();
+
+-- إصلاح: رفض إرسال العذر/المرفق (row-level security)
+-- هل الطالبة الحالية موجودة في كشف هذه الشعبة؟ (تتجاوز حماية جدول الكشوف بأمان)
+create or replace function public.in_roster(sec text) returns boolean language sql stable security definer set search_path=public as
+$$ select public.is_student() and exists(select 1 from public.roster r
+     where r.section_id = sec and r.uid = split_part(lower(auth.jwt()->>'email'),'@',1)) $$;
+grant execute on function public.in_roster(text) to authenticated;
+
+-- العذر: الطالبة ترسل لشعبتها فقط (والمحفّز يملأ بقية الحقول)
+drop policy if exists "students send" on public.excuses;
+create policy "students send" on public.excuses for insert to authenticated
+  with check (public.in_roster(section_id) and status = 'pending' and reason is null and decided_at is null);
+
+-- المرفق: داخل مجلد شعبتها فقط
+drop policy if exists "students upload" on storage.objects;
+create policy "students upload" on storage.objects for insert to authenticated
+  with check (bucket_id = 'excuse-files' and public.in_roster((storage.foldername(name))[1]));
+drop policy if exists "students read own upload" on storage.objects;
+create policy "students read own upload" on storage.objects for select to authenticated
+  using (bucket_id = 'excuse-files' and owner = auth.uid());
