@@ -1,5 +1,5 @@
-/* ضعي هنا بيانات مشروع Supabase (Project Settings → API) */
+/* بيانات مشروع Supabase (Project Settings → API) */
 window.REG_CONFIG = {
-  url: "",   // مثال: https://abcdxyz.supabase.co
-  key: ""    // anon public key
+  url: "https://pumeiysvtzdpqtbpzobr.supabase.co",
+  key: "sb_publishable_YFnPfvjvLWHwNWCRAEG7PA_UheYLCPh"
 };
