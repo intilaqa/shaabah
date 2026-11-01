@@ -82,8 +82,9 @@ button{cursor:pointer}
 .net.off i{background:var(--warn)}
 .tabs{display:grid;grid-template-columns:repeat(6,1fr)}
 .tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:6px 0 7px;font-weight:600;color:var(--muted);font-size:.74rem;position:relative;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:1px}
-.tabs .ic{font-size:1.05rem;line-height:1.2;filter:grayscale(1);opacity:.7}
-.tabs button[aria-selected="true"] .ic{filter:none;opacity:1}
+.tabs .ic{display:block;line-height:0;height:24px}
+.tabs .ic svg .fl{fill:currentColor;stroke:none;opacity:.1}.tabs .ic svg .dm{fill:var(--line-strong);stroke:none}
+.tabs button[aria-selected="true"] .ic svg .fl{opacity:.2}.tabs button[aria-selected="true"] .ic svg .dm{fill:#e0a33c}
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 .tabs .dot{position:absolute;top:2px;inset-inline-start:calc(50% + 6px);min-width:17px;height:17px;border-radius:9px;background:var(--deny);color:var(--surface);font-size:.68rem;line-height:17px;padding:0 4px}
 
@@ -352,22 +353,39 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 <header class="top"><div class="wrap">
   <div class="bar"><p class="brand"><i></i>سجل الحضور</p><div class="sum" id="sum"></div></div>
   <nav class="tabs" role="tablist">
-    <button role="tab" data-tab="home" aria-selected="true"><span class="ic">🏠</span>الرئيسية</button>
-    <button role="tab" data-tab="take" aria-selected="false"><span class="ic">✅</span>التحضير</button>
-    <button role="tab" data-tab="reg" aria-selected="false"><span class="ic">📋</span>السجلات</button>
-    <button role="tab" data-tab="alerts" aria-selected="false"><span class="ic">🔔</span>التنبيهات</button>
-    <button role="tab" data-tab="exc" aria-selected="false"><span class="ic">💬</span>التواصل</button>
-    <button role="tab" data-tab="manage" aria-selected="false"><span class="ic">⚙️</span>الإعداد</button>
+    <button role="tab" data-tab="home" aria-selected="true"><span class="ic"></span>الرئيسية</button>
+    <button role="tab" data-tab="take" aria-selected="false"><span class="ic"></span>التحضير</button>
+    <button role="tab" data-tab="reg" aria-selected="false"><span class="ic"></span>السجلات</button>
+    <button role="tab" data-tab="alerts" aria-selected="false"><span class="ic"></span>التنبيهات</button>
+    <button role="tab" data-tab="exc" aria-selected="false"><span class="ic"></span>التواصل</button>
+    <button role="tab" data-tab="manage" aria-selected="false"><span class="ic"></span>الإعداد</button>
   </nav>
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><p style="font-size:.7rem;opacity:.6">الإصدار ٣٣</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><p style="font-size:.7rem;opacity:.6">الإصدار ٣٤</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
 <script>
+/* custom duotone tab icons — each carries the app's small diamond */
+const D=(x,y)=>`<rect x="${x-1.6}" y="${y-1.6}" width="3.2" height="3.2" rx=".6" transform="rotate(45 ${x} ${y})" class="dm"/>`;
+const SV=(b)=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${b}</svg>`;
+window.TICON={
+ home:SV(`<path class="fl" d="M4 20V11.5a8 8 0 0 1 16 0V20z"/><path d="M4 20V11.5a8 8 0 0 1 16 0V20M2.5 20h19M10 20v-4.5a2 2 0 0 1 4 0V20"/>${D(12,8.2)}`),
+ take:SV(`<rect class="fl" x="5" y="4" width="14" height="17" rx="3"/><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5V3h6v1.5M8.5 13l2.4 2.4L15.5 11"/>${D(12,7.6)}`),
+ reg:SV(`<rect class="fl" x="3.5" y="4.5" width="17" height="15" rx="3"/><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M3.5 9.5h17M9 9.5v10M14.5 9.5v10"/>${D(6.3,7)}`),
+ alerts:SV(`<path class="fl" d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/>${D(12,11.5)}`),
+ exc:SV(`<path class="fl" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v4A2.5 2.5 0 0 1 13.5 13H9l-3 2.5V13H6.5"/><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v4A2.5 2.5 0 0 1 13.5 13H9l-3 2.5V13H6.5A2.5 2.5 0 0 1 4 10.5zM18.5 9.5A2 2 0 0 1 20 11.5v3A2 2 0 0 1 18 16.5h-.5V19l-3-2.5h-2"/>${D(10,8.5)}`),
+ manage:SV(`<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle class="fl" cx="15" cy="7" r="2.3"/><circle cx="15" cy="7" r="2.3"/><circle class="fl" cx="9" cy="17" r="2.3"/><circle cx="9" cy="17" r="2.3"/>${D(12,12)}`),
+ week:SV(`<rect class="fl" x="3.5" y="5.5" width="17" height="15" rx="3"/><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3.5v4M16 3.5v4"/>${D(12,15.2)}`),
+ grades:SV(`<path class="fl" d="M5 20v-6h3.5v6M10.25 20V10h3.5v10M15.5 20V6H19v14"/><path d="M3 20h18M5 20v-6h3.5v6M10.25 20V10h3.5v10M15.5 20V6H19v14"/>${D(17.25,3.3)}`),
+ msg:SV(`<path class="fl" d="M20 11.5a7.5 7 0 0 1-11 6.2L4.5 19l1.3-3.8A7 7 0 1 1 20 11.5z"/><path d="M20 11.5a7.5 7 0 0 1-11 6.2L4.5 19l1.3-3.8A7 7 0 1 1 20 11.5z"/><path d="M9 11.5h.01M15 11.5h.01"/>${D(12,11.5)}`),
+ excuse:SV(`<rect class="fl" x="3.5" y="6" width="17" height="13" rx="2.5"/><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M4 7l8 6 8-6"/>${D(12,16.3)}`),
+};
+
+document.querySelectorAll('.tabs button').forEach(b=>{const i=b.querySelector('.ic');if(i&&TICON[b.dataset.tab])i.innerHTML=TICON[b.dataset.tab]});
 /* ---------- who is opening: student or teacher ---------- */
 (function(){
   const get=()=>{try{return localStorage.getItem('reg.role')}catch(e){return null}},put=v=>{try{v?localStorage.setItem('reg.role',v):localStorage.removeItem('reg.role')}catch(e){}};
