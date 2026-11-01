@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٦</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٧</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -417,6 +417,12 @@ const g=(f,m)=>fem()?f:m;
 const dm=s=>{const p=pd(s);return p.getDate()+'/'+(p.getMonth()+1)};
 
 /* ---------- term / data access ---------- */
+const GENERIC_TERM=/^(|الفصل الدراسي|فصل دراسي جديد)$/;
+function termGuess(d){d=d||new Date();const m=d.getMonth()+1,ord=m>=8?'الأول':m<=5?'الثاني':'الصيفي';
+  /* summer belongs to the academic year that began before the new Hijri year */
+  const yd=ord==='الصيفي'?new Date(d.getTime()-60*864e5):d;
+  let y='';try{y=new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-arab',{year:'numeric'}).format(yd).replace(/[^٠-٩]/g,'')}catch(e){}
+  return 'الفصل '+ord+(y?' '+y+'هـ':'')}
 const term=()=>S.settings.terms.find(t=>t.id===S.settings.currentTerm)||S.settings.terms[0]||null;
 const secs=()=>{const t=term();return S.classes.filter(c=>t&&c.term===t.id).sort((a,b)=>(a.order||0)-(b.order||0))};
 const cById=id=>S.classes.find(c=>c.id===id);
@@ -800,7 +806,7 @@ function vManage(){
     ${S.canWrite?'<div><button class="btn sm" data-act="saveProf">حفظ</button></div>':''}</div></section>`;
   h+=`<section class="sec"><h2>الفصل الدراسي</h2><div class="card form">
     ${S.settings.terms.length>1?`<div class="f"><label for="tsel">الفصل المعروض</label><select id="tsel" data-chg="term">${S.settings.terms.map(x=>`<option value="${esc(x.id)}"${t&&x.id===t.id?' selected':''}>${esc(x.name)}</option>`).join('')}</select></div>`:''}
-    <div class="setgrid"><div class="f"><label for="tn">اسم الفصل</label><input id="tn" value="${esc(t?t.name:'')}" placeholder="الفصل الأول ١٤٤٨هـ"${ro}></div>
+    <div class="setgrid"><div class="f"><label for="tn">اسم الفصل</label><input id="tn" value="${esc(t&&!GENERIC_TERM.test(t.name||'')?t.name:'')}" placeholder="${esc(termGuess(t&&t.start?pd(t.start):new Date()))} (يُكتب تلقائيًا)"${ro}></div>
     <div class="f"><label for="ts">تاريخ أول أسبوع دراسي</label><input id="ts" type="date" value="${t?t.start:''}"${ro}></div>
     <div class="f"><label for="tw">عدد أسابيع الدراسة</label><input id="tw" type="number" min="1" max="30" value="${t?t.weeks:15}"${ro}></div></div>
     ${S.canWrite?`<div class="inline"><button class="btn pri" data-act="saveTerm">${t?'حفظ':'إنشاء الفصل'}</button>${t?`<button class="btn ${S.armed==='newterm'?'danger armed':''}" data-act="newTerm">${S.armed==='newterm'?'تأكيد: بدء فصل جديد':'فصل دراسي جديد'}</button>`:''}</div>`:''}
@@ -825,7 +831,7 @@ function vManage(){
       <div class="f"><label for="ta-${esc(c.id)}">أو الصق الأسماء (سطر لكل طالبة، الرقم الجامعي اختياري)</label><textarea id="ta-${esc(c.id)}" placeholder="الرقم الجامعي  اسم الطالبة"></textarea></div>
       ${P&&rosterWarn(c,P)?`<div class="banner err" style="margin:0">⚠️ ${esc(rosterWarn(c,P))}</div>`:''}
       ${P&&P.meta?(()=>{const m=P.meta;
-        return `<div class="rule"><span>📄 الكشف: <b>${esc(m.course)}</b>${m.sec?` · رقم الشعبة <b class="num">${esc(m.sec)}</b>`:''}</span>
+        return `<div class="rule"><span>📄 الكشف: <b>${esc(m.course||'—')}</b>${m.sec?` · رقم الشعبة <b class="num">${esc(m.sec)}</b>`:''}${m.term?` · ${esc(m.term)}`:''}</span>
 
         ${S.canWrite?`<div style="margin-top:6px"><button class="lnk" data-act="useMeta" data-c="${esc(c.id)}">تسمية الشعبة: «${esc((m.sec?'شعبة '+m.sec+' — ':'')+m.course)}»</button></div>`:''}</div>`})():''}
       ${P?`<div class="preview num">جاهز للإضافة: <b>${P.list.length}</b> طالبة${P.dup?` (تُجوهلت ${P.dup} مكررة)`:''} — ${esc(P.list.slice(0,3).map(x=>x.name).join('، '))}${P.list.length>3?'…':''}</div>`:''}
@@ -969,13 +975,14 @@ async function pdfRoster(file,c){
     for(let i=1;i<=pdf.numPages;i++)pages.push((await (await pdf.getPage(i)).getTextContent()).items);
     /* some PDFs store Arabic in visual order: decide once for the whole file */
     const allTxt=pages.flat().map(it=>clean(it.str)).join(' '),flip=looksRight(rv(allTxt))>looksRight(allTxt);
-    const fixDir=t=>flip?rv(t).replace(/\d+/g,rv):t;let meta=null;
+    const fixDir=t=>flip?rv(t).replace(/\d+/g,rv):t;let meta=null,termName='';
     for(const its of pages){
       const rows=new Map();
       for(const it of its){const str=clean(it.str);if(!str.trim())continue;const y=Math.round(it.transform[5]/3);
         if(!rows.has(y))rows.set(y,[]);rows.get(y).push({x:it.transform[4],str})}
       for(const items of rows.values()){
         const all=items.map(o=>o.str).join(' ');
+        if(!termName){const tm=items.map(o=>fixDir(o.str)).join(' ').match(/الفصل\s+(?:الدراسي\s+)?(الأول|الاول|الثاني|الثالث|الصيفي)\s*(\d{4})/);if(tm)termName='الفصل '+tm[1].replace('الاول','الأول')+' '+tm[2].replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d])+'هـ'}
         /* header: «الشعبة  الابتكار والتقنيات الناشئة-13384» */
         if(!meta){const hs=items.sort((a,b)=>b.x-a.x).map(o=>fixDir(o.str).trim()).filter(Boolean);
           if(hs.some(t=>/^الشعبة\s*:?$/.test(t))||/الشعبة/.test(hs.join(' '))&&!/\b4\d{8}\b/.test(all)){
@@ -986,7 +993,7 @@ async function pdfRoster(file,c){
         const name=parts.join(' ').replace(STATUS,' ').replace(/\s+/g,' ').trim();
         if(name&&name.split(' ').length>=2)list.push({name,uid:id})}
     }
-    const r=dedupe(c,list);r.meta=meta;
+    const r=dedupe(c,list);r.meta=meta||(termName?{course:'',sec:''}:null);if(r.meta&&termName)r.meta.term=termName;
     if(!r.list.length)toast(r.dup?'كل الأسماء موجودة مسبقًا':'لم أستطع قراءة الأسماء من هذا الملف. جرّبي ملف Excel أو الصقي الأسماء.',4500);
     S.parsed[c.id]=r.list.length?r:null;
   }catch(e){toast(navigator.onLine===false?'قراءة PDF تحتاج اتصالًا أول مرة':'تعذّرت قراءة ملف PDF',4000)}
@@ -1121,13 +1128,13 @@ document.addEventListener('click',async e=>{
   case 'impRmMeet':I.sections[+t.dataset.i].meetings.splice(+t.dataset.j,1);render();return;
   case 'impAddMeet':I.sections[+t.dataset.i].meetings.push({day:0,start:'08:00',end:'09:50',room:'',hours:2});render();return;
   case 'saveProf':{const pf={title:$('pt').value,name:$('pn').value.trim(),hours:($('ph2')||{}).value?$('ph2').value.trim():''};write(()=>db.doc('config/settings').set({...S.settings,profile:pf}),'حُفظ');return}
-  case 'saveTerm':{const name=$('tn').value.trim()||'الفصل الدراسي',start=$('ts').value,weeks=Math.max(1,parseInt($('tw').value,10)||15);
+  case 'saveTerm':{const start=$('ts').value,name=$('tn').value.trim()&&!GENERIC_TERM.test($('tn').value.trim())?$('tn').value.trim():termGuess(start?pd(start):new Date()),weeks=Math.max(1,parseInt($('tw').value,10)||15);
     if(!start){$('ts').focus();toast('حدد تاريخ أول أسبوع');return}
     const terms=[...S.settings.terms];const cur=term();let id=cur?cur.id:rid('t');
     if(cur)terms[terms.findIndex(x=>x.id===cur.id)]={id,name,start,weeks};else terms.push({id,name,start,weeks});
     write(()=>db.doc('config/settings').set({...S.settings,terms,currentTerm:id}),'حُفظ الفصل الدراسي');return}
   case 'newTerm':{if(S.armed!=='newterm'){S.armed='newterm';render();return}S.armed=null;const id=rid('t');
-    write(()=>db.doc('config/settings').set({...S.settings,terms:[...S.settings.terms,{id,name:'فصل دراسي جديد',start:ymd(new Date()),weeks:15}],currentTerm:id}),'أُنشئ فصل جديد، حدّث بياناته');return}
+    write(()=>db.doc('config/settings').set({...S.settings,terms:[...S.settings.terms,{id,name:termGuess(),start:ymd(new Date()),weeks:15}],currentTerm:id}),'أُنشئ فصل جديد، حدّث بياناته');return}
   case 'addClsManual':{const id=rid('c');S.openCls=id;
     write(()=>db.doc('classes/'+id).set({term:term().id,name:'شعبة جديدة',short:'شعبة',order:Date.now(),students:[],meetings:[{id:rid('m'),day:0,start:'08:00',end:'09:50',room:'',hours:2}]}),'أُضيفت شعبة، عدّل اسمها ومواعيدها');return}
   case 'addMeet':{S.openCls=c.id;const used=new Set((c.meetings||[]).map(m=>m.day));const day=[0,1,2,3,4].find(d=>!used.has(d))??0;
@@ -1139,7 +1146,11 @@ document.addEventListener('click',async e=>{
     S.parsed[c.id]=null;
     const students=[...(c.students||[]),...r.list.map(x=>({id:rid('s'),name:x.name,uid:x.uid}))].sort((a,b)=>coll.compare(a.name,b.name));
     const upd={students};if(r.meta&&r.meta.sec&&!c.secNo)upd.secNo=r.meta.sec;
-    write(()=>db.doc('classes/'+c.id).update(upd),`أُضيفت ${r.list.length} طالبة ورُتّبن أبجديًا`);return}
+    const tt=term(),newName=r.meta&&r.meta.term;
+    write(async()=>{await db.doc('classes/'+c.id).update(upd);
+      if(tt&&newName&&(GENERIC_TERM.test(tt.name||'')||tt.name===termGuess(tt.start?pd(tt.start):new Date()))&&tt.name!==newName){
+        await db.doc('config/settings').set({...S.settings,terms:S.settings.terms.map(x=>x.id===tt.id?{...x,name:newName}:x)})}},
+      `أُضيفت ${r.list.length} طالبة ورُتّبن أبجديًا`+(newName&&tt&&tt.name!==newName&&GENERIC_TERM.test(tt.name||'')?` · وسُمّي الفصل «${newName}»`:''));return}
   case 'useMeta':{const m=S.parsed[c.id]&&S.parsed[c.id].meta;if(!m)return;S.openCls=c.id;
     const name=(m.sec?'شعبة '+m.sec+' — ':'')+m.course,short=((m.sec||'')+' '+(m.course.split(/\s+/)[0]||'')).trim();
     write(()=>db.doc('classes/'+c.id).update(m.sec?{name,short,secNo:m.sec}:{name,short}),'تمت تسمية الشعبة من الكشف');return}
@@ -1212,6 +1223,7 @@ async function boot(){
   db.collection('attendance').onSnapshot(q=>{S.att=q.docs.map(d=>({id:d.id,...d.data()}));S.got.a=1;
     if(S.sheet&&!S.sheet.dirty){const d=allAtt().find(x=>x.id===key(S.sheet.classId,S.sheet.date,S.sheet.meetingId));S.sheet.existing=!!d;S.sheet.cancelled=!!(d&&d.cancelled);S.sheet.reason=d&&d.reason||''}done()});
   db.doc('config/settings').onSnapshot(d=>{S.settings={...DEF,...(d.exists?d.data():{})};S.got.s=1;done()});
+  setTimeout(()=>{const t=term();if(t&&GENERIC_TERM.test(t.name||'')&&S.live)db.doc('config/settings').set({...S.settings,terms:S.settings.terms.map(x=>x.id===t.id?{...x,name:termGuess(t.start?pd(t.start):new Date())}:x)})},1500);
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 render();boot();
