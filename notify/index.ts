@@ -3,7 +3,13 @@
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+// مفتاح الخادم: النوع القديم أو الجديد من مفاتيح Supabase
+function serverKey(): string {
+  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (legacy) return legacy;
+  try { const all = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}"); return all.default || Object.values(all)[0] as string; } catch { return ""; }
+}
+const sb = createClient(Deno.env.get("SUPABASE_URL")!, serverKey());
 const LEAD = 15; // دقائق قبل المحاضرة
 let cfg: Record<string, string> | null = null;
 
