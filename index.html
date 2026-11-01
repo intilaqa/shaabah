@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ٨</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ٩</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -703,7 +703,7 @@ function vReg(stats){
   h+='<td colspan="3"></td></tr></tfoot></table></div></section>';
   return h;
 }
-function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;setTimeout(()=>no({code:'timeout'}),25000);document.head.appendChild(s)})}
 function loadXLSX(){return window.XLSX?Promise.resolve():loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}
 async function exportXls(scope){
   try{await loadXLSX()}catch(e){toast('تعذّر تجهيز ملف Excel، تحقق من الاتصال');return}
@@ -762,6 +762,9 @@ const dayOpts=sel=>DAYS.map((d,i)=>`<option value="${i}"${sel===i?' selected':''
 const hourOpts=sel=>HOURS.map(v=>`<option value="${v}"${+sel===v?' selected':''}>${hrs(v)}</option>`).join('');
 function vImport(){
   const I=S.imp;
+  if(I&&I.state==='fail')return `<div class="drop"><b>ما قدرت أقرأ الجدول</b><span class="hint">${esc(I.err||'لم أجد في الملف أيامًا وأوقاتًا. جرّبي نسخ الجدول من البوابة ولصقه، أو ارفعي ملفًا آخر.')}</span>
+    ${I.sample?`<details style="width:100%;text-align:start"><summary class="hint">ما قرأته من الملف</summary><pre style="white-space:pre-wrap;font-size:.75rem;direction:rtl">${esc(I.sample)}</pre></details>`:''}
+    <button class="btn pri" data-act="impCancel">رجوع</button></div>`;
   if(I&&I.state==='busy')return `<div class="drop"><div class="busy"><span class="spin"></span>${esc(I.msg||'أقرأ الجدول وأقسّمه إلى شعب…')}</div><span class="hint">قد يستغرق ذلك دقيقة.</span><button class="btn sm" data-act="impCancel">إيقاف</button></div>`;
   if(I&&I.state==='review'){
     let h=`<div class="card form"><div class="sec-h"><b style="font-family:var(--f-hero)">راجع الشعب المستخرجة (${I.sections.length})</b><span class="hint">عدّل أي خانة قبل الحفظ</span></div>`;
@@ -864,12 +867,23 @@ const DAYMAP=[['أحد',0],['اثنين',1],['إثنين',1],['ثلاثاء',2],
 function toDay(v){if(typeof v==='number'&&v>=0&&v<=4)return v;const s=String(v??'');if(/^[0-4]$/.test(s))return +s;for(const[k,i]of DAYMAP)if(s.includes(k))return i;const en={sun:0,mon:1,tue:2,wed:3,thu:4};const k=s.slice(0,3).toLowerCase();return k in en?en[k]:null}
 function toTime(v){const s=normDigits(v);const m=s.match(/(\d{1,2})[:.](\d{2})/);if(!m)return '';let h=+m[1];if(/م|pm/i.test(s)&&h<12)h+=12;if(h<7)h+=12;return pad(h)+':'+m[2]}
 /* ---------- reading the university timetable locally (paste / Excel / PDF) ---------- */
-function parseTimetable(txt){
-  const by=new Map();let day=null;
+function parseTimetable(txt,nearest){
+  const by=new Map();let day=null;const marks=[],ents=[];
   const lines=normDigits(String(txt||'').normalize('NFKC')).replace(/[\u200e\u200f\u202a-\u202e]/g,'').split(/\r?\n/);
-  for(const raw of lines){
+  lines.forEach((raw,li)=>{const d=DAYMAP.find(([k])=>raw.includes(k));if(d)marks.push([li,d[1]])});
+  /* PDFs put the day label in the middle of its rows: split rows into days where the start time resets,
+     then give the day labels to those groups in order (falls back to the nearest label) */
+  const pdfDay=new Map();
+  if(nearest){const rowsT=[];lines.forEach((raw,li)=>{const t=raw.match(/\b(\d{1,2}):(\d{2})\b/);if(t&&/\b\d{1,2}:\d{2}\b[\s\S]*\b\d{1,2}:\d{2}\b/.test(raw))rowsT.push([li,mins(toTime(t[0]))])});
+    const labels=marks.map(x=>x[1]).filter((d,i,a)=>i===0||a[i-1]!==d);const groups=[];
+    rowsT.forEach(([li,m],i)=>{if(!i||m<=rowsT[i-1][1])groups.push([]);groups[groups.length-1].push(li)});
+    if(groups.length===labels.length)groups.forEach((g,i)=>g.forEach(li=>pdfDay.set(li,labels[i])))}
+  const dayAt=li=>{if(!nearest){let r=null;for(const[m,d]of marks){if(m<=li)r=d;else break}return r}
+    if(pdfDay.has(li))return pdfDay.get(li);
+    let best=null,bd=1e9;for(const[m,d]of marks){const x=Math.abs(m-li);if(x<bd){bd=x;best=d}}return best};
+  for(let li=0;li<lines.length;li++){const raw=lines[li];
     const ln=raw.replace(/\s+$/,'');if(!ln.trim())continue;
-    const d=DAYMAP.find(([k])=>ln.includes(k));if(d)day=d[1];
+    day=dayAt(li);
     const times=[...ln.matchAll(/\b(\d{1,2}):(\d{2})\b/g)].map(m=>toTime(m[0]));if(times.length<2||day==null)continue;
     let[start,end]=times;if(mins(end)<mins(start))[start,end]=[end,start];
     const cells=ln.split(/\t|\s{2,}|\|/).map(x=>x.trim()).filter(Boolean);
@@ -897,16 +911,18 @@ async function fileText(file){
   if(/\.(html?|txt|csv|tsv)$/i.test(file.name)){const t=await file.text();return /<t[dr]/i.test(t)?[...new DOMParser().parseFromString(t,'text/html').querySelectorAll('tr')].map(r=>[...r.cells].map(c=>c.textContent.trim()).join('\t')).join('\n'):t}
   await loadXLSX();const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});return wb.SheetNames.map(n=>XLSX.utils.sheet_to_csv(wb.Sheets[n],{FS:'\t'})).join('\n');
 }
-function showTimetable(txt){
-  const sections=parseTimetable(txt);
-  if(!sections.length){toast('ما قدرت أقرأ الجدول. انسخي الجدول كاملًا من البوابة (مع الأيام والأوقات) وألصقيه.',5000);return}
+function showTimetable(txt,nearest){
+  const sections=parseTimetable(txt,nearest);
+  if(!sections.length){S.imp={state:'fail',sample:String(txt||'').split(/\r?\n/).filter(x=>x.trim()).slice(0,8).join('\n')};render();return}
   S.imp={state:'review',sections};render();
   toast(`قرأت ${sections.length} شعب و${sections.reduce((n,x)=>n+x.meetings.length,0)} مواعيد، راجعيها ثم احفظي`,4000);
 }
 async function timetableFile(file){
   if(/^image\//.test(file.type)){toast('الصورة لا تُقرأ بدون إنترنت ذكي. انسخي الجدول من البوابة وألصقيه، أو ارفعي PDF/Excel.',5500);return}
   S.imp={state:'busy',msg:'أقرأ الجدول…'};render();
-  try{const t=await fileText(file);S.imp=null;showTimetable(t)}catch(e){S.imp=null;toast('تعذّرت قراءة الملف',3500);render()}
+  const isPdf=/\.pdf$/i.test(file.name)||file.type==='application/pdf';
+  try{const t=await Promise.race([fileText(file),new Promise((_,no)=>setTimeout(()=>no({code:'timeout'}),45000))]);showTimetable(t,isPdf)}
+  catch(e){S.imp={state:'fail',err:e&&e.code==='timeout'?'تأخر تحميل أداة القراءة. تأكدي من الاتصال بالإنترنت وجرّبي مرة ثانية.':'تعذّرت قراءة الملف.'};render()}
 }
 let impCtl=null;
 async function importSchedule(files){
