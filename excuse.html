@@ -74,7 +74,8 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
 .wk div.t{outline:2px solid var(--accent)}
 .wk b{font-weight:700}.wk .rm{background:var(--ink);color:var(--surface);border-radius:6px;padding:0 7px;font-size:.78rem;font-weight:700;direction:ltr}
 .row2{display:flex;gap:8px;flex-wrap:wrap}.ghost{background:var(--bg);color:var(--ink);border:1.5px solid var(--line)}
-.greet h1{font-size:1.55rem;font-weight:700;letter-spacing:0}.greet p{margin:4px 0 0}
+.greet h1{font-size:1.55rem;font-weight:700;letter-spacing:0}
+.gname{font-family:"Amiri",serif;font-weight:700;color:var(--accent);font-size:1.15em}.greet p{margin:4px 0 0}
 .wait{font-size:.95rem;color:var(--accent);font-weight:600;margin-top:2px}
 .dh{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:6px}
 .dh .k{font-size:.72rem;font-weight:700;color:var(--accent)}
@@ -121,7 +122,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢١</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢٢</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -306,7 +307,7 @@ function portal(){
     <div class="row2"><button class="btn ghost" data-a="reload">تحديث</button></div>${out}</section>`;return}
   const hr=new Date().getHours(),tod=hr<11?'morning':hr<15?'noon':hr<18?'after':'night';
   const first=(S.name||'').trim().split(/\s+/)[0];
-  const hello=(hr<12?'صباح الخير':hr<18?'مساء النور':'مساء الخير')+(first?' يا '+first:'')+' 🌿';
+  const hello=esc(hr<12?'صباح الخير':hr<18?'مساء النور':'مساء الخير')+(first?` يا <span class="gname">${esc(first)}</span>`:'')+' 🌿';
   const L=ENC[tod],enc=L[Math.floor(Date.now()/36e5)%L.length];
   /* the nearest lecture across all my sections */
   const ns=mine.map(sec=>{const n=nextLecture(sec);return n&&{...n,sec}}).filter(Boolean).sort((x,y)=>x.k-y.k||mins(x.m.start)-mins(y.m.start));
@@ -336,7 +337,7 @@ function portal(){
   else if(S.tab==='msg')body=msgsView();
   else if(S.tab==='exc')body=`<h2>أعذاري</h2>${mineView()||'<p class="sub">لم ترسلي أي عذر بعد.</p>'}<div class="row2"><button class="btn" data-a="excuse">📩 إرسال عذر جديد</button></div>`;
   else body=`${anns.map(a=>{const x=mine.find(z=>z.id===a.section_id)||mine.find(z=>z.owner===a.owner);return `<div class="annb">${newA.includes(a)?'<span class="nw">جديد</span>':''}📢 ${esc(a.body)}<small class="num">${esc(x?tName(x):'')}${a.section_id&&x?' · '+esc(x.short||x.name):''} · ${esc(fD.format(new Date(a.created_at)))}</small></div>`}).join('')}
-     <div class="greet"><h1>${esc(hello)}</h1><p class="sub">${esc(enc)}</p></div>${top}${offN}
+     <div class="greet"><h1>${hello}</h1><p class="sub">${esc(enc)}</p></div>${top}${offN}
      ${cxs.length?`<div class="wk">${cxs.map(c=>{const m=(c.sec.meetings||[]).find(x=>x.id===c.meeting_id);return `<div class="ann cx" style="display:block">❌ أُلغيت محاضرة ${esc(c.sec.short||c.sec.name)} ${esc(DAYS[pd(c.date).getDay()]+' '+fD.format(pd(c.date)))}${m?' '+t12(m.start):''}${c.reason?' · '+esc(c.reason):''}</div>`}).join('')}</div>`:''}
      <div class="row2"><button class="btn" data-a="excuse">📩 عندي عذر</button></div>
      <div class="dh"><span class="k">${esc(d.k)}</span><p class="t">${esc(d.t)}</p><div class="s2"><span>${esc(d.s)}</span><button data-a="dh">التالي ←</button></div></div>`;
