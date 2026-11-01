@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ٨</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -765,7 +765,7 @@ function vImport(){
   if(I&&I.state==='busy')return `<div class="drop"><div class="busy"><span class="spin"></span>${esc(I.msg||'أقرأ الجدول وأقسّمه إلى شعب…')}</div><span class="hint">قد يستغرق ذلك دقيقة.</span><button class="btn sm" data-act="impCancel">إيقاف</button></div>`;
   if(I&&I.state==='review'){
     let h=`<div class="card form"><div class="sec-h"><b style="font-family:var(--f-hero)">راجع الشعب المستخرجة (${I.sections.length})</b><span class="hint">عدّل أي خانة قبل الحفظ</span></div>`;
-    I.sections.forEach((s,i)=>{h+=`<div class="card impcard ${s.on?'':'off'}"><label class="chk"><input type="checkbox" data-imp="on" data-i="${i}"${s.on?' checked':''}> <b>${esc(s.name||'شعبة')}</b></label>
+    I.sections.forEach((s,i)=>{h+=`<div class="card impcard ${s.on?'':'off'}"><label class="chk"><input type="checkbox" data-imp="on" data-i="${i}"${s.on?' checked':''}> <b>${esc(s.name||'شعبة')}</b>${s.secNo?` <span class="pill muted num">${esc(s.secNo)}</span>`:''}</label>
       <div class="inline"><div class="f"><label>اسم الشعبة</label><input value="${esc(s.name)}" data-imp="name" data-i="${i}"></div><div class="f" style="max-width:150px;min-width:110px"><label>اسم مختصر</label><input value="${esc(s.short)}" data-imp="short" data-i="${i}"></div></div>
       ${s.meetings.map((m,j)=>`<div class="mrow"><div class="f"><label>اليوم</label><select data-imp="m.day" data-i="${i}" data-j="${j}">${dayOpts(m.day)}</select></div>
         <div class="f"><label>من</label><input type="time" value="${esc(m.start)}" data-imp="m.start" data-i="${i}" data-j="${j}"></div>
@@ -776,8 +776,11 @@ function vImport(){
       <div><button class="lnk" data-act="impAddMeet" data-i="${i}">+ موعد</button></div></div>`});
     return h+`<div class="inline"><button class="btn pri lg" data-act="impSave">حفظ الجدول (${I.sections.filter(s=>s.on).length} شعب)</button><button class="btn" data-act="impCancel">إلغاء</button></div></div>`;
   }
-  return `<div class="drop"><b>أضف شعبك</b><span class="hint">أضف كل شعبة ثم اكتب أيامها وأوقاتها وقاعاتها، والساعات تُحسب تلقائيًا من الوقت. أو استورد ملف النسخة الاحتياطية من الأسفل.</span>
-    ${S.canWrite?'<button class="btn pri" data-act="addClsManual">إضافة شعبة</button>':''}</div>`;
+  return `<div class="drop"><b>${secs().length?'تحديث الجدول':'ارفعي جدولك'}</b>
+    <span class="hint">افتحي جدولك في بوابة الجامعة، حدّدي الجدول كاملًا وانسخيه، ثم الصقيه هنا. يقرأ الشعب والأيام والأوقات والقاعات والساعات تلقائيًا.</span>
+    <div class="f" style="width:100%"><textarea id="ttx" placeholder="الصقي الجدول هنا…" style="min-height:110px"></textarea></div>
+    <div class="inline" style="justify-content:center"><button class="btn pri" data-act="ttRead">قراءة الجدول</button>
+      <span class="filebtn btn"><span>أو ارفعي ملف (PDF / Excel)</span><input type="file" accept=".pdf,.xlsx,.xls,.csv,.txt,.html,.htm,application/pdf" data-chg="ttfile" aria-label="ملف الجدول"></span></div></div>`;
 }
 function vManage(){
   const st=S.settings,t=term(),ro=S.canWrite?'':' disabled',pf=st.profile||{};
@@ -808,10 +811,15 @@ function vManage(){
       ${S.canWrite?`<div><button class="lnk" data-act="addMeet" data-c="${esc(c.id)}">+ إضافة موعد</button></div>`:''}</div>
       <div class="sec"><span class="lbl">الطالبات (مرتبات أبجديًا)</span>
       ${ns?`<div class="slist">${sorted(c).map((s,i)=>`<div class="srow"><span class="i num">${i+1}</span><span>${esc(s.name)}</span><span class="id num">${esc(s.uid||'')}</span>${S.canWrite?`<button data-act="rmStu" data-c="${esc(c.id)}" data-s="${esc(s.id)}" aria-label="حذف ${esc(s.name)}">×</button>`:'<span></span>'}</div>`).join('')}</div>`:'<span class="hint">لا طالبات بعد.</span>'}
-      ${S.canWrite?(S.rosterBusy===c.id?'<div class="busy"><span class="spin"></span>أقرأ الكشف…</div>':`<div class="inline"><span class="filebtn btn"><span>رفع كشف الشعبة</span><input type="file" accept=".xlsx,.xls,.csv,.txt,.pdf,image/*" data-chg="file" data-c="${esc(c.id)}" aria-label="كشف ${esc(c.name)}"></span><span class="hint">Excel أو CSV</span></div>`)+`
+      ${S.canWrite?(S.rosterBusy===c.id?'<div class="busy"><span class="spin"></span>أقرأ الكشف…</div>':`<div class="inline"><span class="filebtn btn"><span>رفع كشف الشعبة</span><input type="file" accept=".xlsx,.xls,.csv,.txt,.pdf,image/*" data-chg="file" data-c="${esc(c.id)}" aria-label="كشف ${esc(c.name)}"></span><span class="hint">PDF الجامعة أو Excel أو CSV</span></div>`)+`
       <div class="f"><label for="ta-${esc(c.id)}">أو الصق الأسماء (سطر لكل طالبة، الرقم الجامعي اختياري)</label><textarea id="ta-${esc(c.id)}" placeholder="الرقم الجامعي  اسم الطالبة"></textarea></div>
+      ${P&&rosterWarn(c,P)?`<div class="banner err" style="margin:0">⚠️ ${esc(rosterWarn(c,P))}</div>`:''}
+      ${P&&P.meta?(()=>{const m=P.meta;
+        return `<div class="rule"><span>📄 الكشف: <b>${esc(m.course)}</b>${m.sec?` · رقم الشعبة <b class="num">${esc(m.sec)}</b>`:''}</span>
+
+        ${S.canWrite?`<div style="margin-top:6px"><button class="lnk" data-act="useMeta" data-c="${esc(c.id)}">تسمية الشعبة: «${esc((m.sec?'شعبة '+m.sec+' — ':'')+m.course)}»</button></div>`:''}</div>`})():''}
       ${P?`<div class="preview num">جاهز للإضافة: <b>${P.list.length}</b> طالبة${P.dup?` (تُجوهلت ${P.dup} مكررة)`:''} — ${esc(P.list.slice(0,3).map(x=>x.name).join('، '))}${P.list.length>3?'…':''}</div>`:''}
-      <div class="inline"><button class="btn pri" data-act="addStu" data-c="${esc(c.id)}">${P?'إضافة '+P.list.length+' طالبة':'إضافة الأسماء الملصقة'}</button><span style="flex:1"></span><button class="btn danger ${S.armed==='cls:'+c.id?'armed':''}" data-act="delCls" data-c="${esc(c.id)}">${S.armed==='cls:'+c.id?'تأكيد: حذف الشعبة وسجلاتها':'حذف الشعبة'}</button></div>`:''}
+      <div class="inline"><button class="btn ${P&&rosterWarn(c,P)?'danger'+(S.armed==='add:'+c.id?' armed':''):'pri'}" data-act="addStu" data-c="${esc(c.id)}">${P?(rosterWarn(c,P)?(S.armed==='add:'+c.id?'تأكيد: إضافتهن رغم التنبيه':'إضافة رغم التنبيه'):'إضافة '+P.list.length+' طالبة'):'إضافة الأسماء الملصقة'}</button><span style="flex:1"></span><button class="btn danger ${S.armed==='cls:'+c.id?'armed':''}" data-act="delCls" data-c="${esc(c.id)}">${S.armed==='cls:'+c.id?'تأكيد: حذف الشعبة وسجلاتها':'حذف الشعبة'}</button></div>`:''}
       </div></div></details>`}
   h+='</div></section>';
   h+=`<section class="sec"><h2>قواعد الحرمان والانقطاع</h2><div class="card form"><div class="setgrid">
@@ -855,6 +863,51 @@ const sampleErr=e=>({not_granted:'لم يُسمح للصفحة باستخدام 
 const DAYMAP=[['أحد',0],['اثنين',1],['إثنين',1],['ثلاثاء',2],['أربعاء',3],['اربعاء',3],['خميس',4]];
 function toDay(v){if(typeof v==='number'&&v>=0&&v<=4)return v;const s=String(v??'');if(/^[0-4]$/.test(s))return +s;for(const[k,i]of DAYMAP)if(s.includes(k))return i;const en={sun:0,mon:1,tue:2,wed:3,thu:4};const k=s.slice(0,3).toLowerCase();return k in en?en[k]:null}
 function toTime(v){const s=normDigits(v);const m=s.match(/(\d{1,2})[:.](\d{2})/);if(!m)return '';let h=+m[1];if(/م|pm/i.test(s)&&h<12)h+=12;if(h<7)h+=12;return pad(h)+':'+m[2]}
+/* ---------- reading the university timetable locally (paste / Excel / PDF) ---------- */
+function parseTimetable(txt){
+  const by=new Map();let day=null;
+  const lines=normDigits(String(txt||'').normalize('NFKC')).replace(/[\u200e\u200f\u202a-\u202e]/g,'').split(/\r?\n/);
+  for(const raw of lines){
+    const ln=raw.replace(/\s+$/,'');if(!ln.trim())continue;
+    const d=DAYMAP.find(([k])=>ln.includes(k));if(d)day=d[1];
+    const times=[...ln.matchAll(/\b(\d{1,2}):(\d{2})\b/g)].map(m=>toTime(m[0]));if(times.length<2||day==null)continue;
+    let[start,end]=times;if(mins(end)<mins(start))[start,end]=[end,start];
+    const cells=ln.split(/\t|\s{2,}|\|/).map(x=>x.trim()).filter(Boolean);
+    const crn=(ln.match(/\b\d{5}\b/)||[''])[0];
+    const code=(ln.match(/\b[A-Z]{2,5}\s?-?\s?\d{3,4}\b/)||[''])[0].replace(/\s/g,'');
+    const sec=(cells.find(x=>/^[A-Z]{1,2}\d{1,3}$/.test(x))||(ln.match(/\b[A-Z]\d{1,3}\b/)||[''])[0]);
+    const room=(ln.match(/\b[A-Z]{1,4}-[A-Z]{1,4}-?\d{1,4}[A-Z]?\b/)||ln.match(/\b[A-Z]{1,3}\d?-\d{1,4}\b/)||[''])[0];
+    const course=cells.filter(x=>AR.test(x)&&!DAYMAP.some(([k])=>x.includes(k))&&!/^(نظري|عملي|تمارين|محاضرة)$/.test(x)&&!/_/.test(x)&&!/^(شهبة|مبنى)/.test(x)).sort((a,b)=>b.length-a.length)[0]||'';
+    const k=crn||code+'|'+sec||course;if(!k)continue;
+    if(!by.has(k))by.set(k,{crn,code,sec,course,meetings:[]});
+    const g=by.get(k);if(!g.course&&course)g.course=course;
+    if(!g.meetings.some(m=>m.day===day&&m.start===start))g.meetings.push({day,start,end,room,hours:suggestH(start,end)||1});
+  }
+  return [...by.values()].map(g=>({secNo:g.crn,on:true,meetings:g.meetings.sort((a,b)=>a.day-b.day||mins(a.start)-mins(b.start)),
+    name:[g.sec?'شعبة '+g.sec:'',[g.code,g.course].filter(Boolean).join(' ')].filter(Boolean).join(' — ')||'شعبة',
+    short:((g.sec||'')+' '+(g.course.split(/\s+/)[0]||g.code)).trim()}));
+}
+async function fileText(file){
+  if(/\.pdf$/i.test(file.name)||file.type==='application/pdf'){
+    if(!window.pdfjsLib){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'}
+    const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;let out='';
+    for(let i=1;i<=pdf.numPages;i++){const rows=new Map();for(const it of (await (await pdf.getPage(i)).getTextContent()).items){if(!it.str.trim())continue;const y=Math.round(it.transform[5]/3);if(!rows.has(y))rows.set(y,[]);rows.get(y).push(it)}
+      for(const y of [...rows.keys()].sort((a,b)=>b-a))out+=rows.get(y).sort((a,b)=>b.transform[4]-a.transform[4]).map(o=>o.str).join('\t')+'\n'}
+    return out}
+  if(/\.(html?|txt|csv|tsv)$/i.test(file.name)){const t=await file.text();return /<t[dr]/i.test(t)?[...new DOMParser().parseFromString(t,'text/html').querySelectorAll('tr')].map(r=>[...r.cells].map(c=>c.textContent.trim()).join('\t')).join('\n'):t}
+  await loadXLSX();const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});return wb.SheetNames.map(n=>XLSX.utils.sheet_to_csv(wb.Sheets[n],{FS:'\t'})).join('\n');
+}
+function showTimetable(txt){
+  const sections=parseTimetable(txt);
+  if(!sections.length){toast('ما قدرت أقرأ الجدول. انسخي الجدول كاملًا من البوابة (مع الأيام والأوقات) وألصقيه.',5000);return}
+  S.imp={state:'review',sections};render();
+  toast(`قرأت ${sections.length} شعب و${sections.reduce((n,x)=>n+x.meetings.length,0)} مواعيد، راجعيها ثم احفظي`,4000);
+}
+async function timetableFile(file){
+  if(/^image\//.test(file.type)){toast('الصورة لا تُقرأ بدون إنترنت ذكي. انسخي الجدول من البوابة وألصقيه، أو ارفعي PDF/Excel.',5500);return}
+  S.imp={state:'busy',msg:'أقرأ الجدول…'};render();
+  try{const t=await fileText(file);S.imp=null;showTimetable(t)}catch(e){S.imp=null;toast('تعذّرت قراءة الملف',3500);render()}
+}
 let impCtl=null;
 async function importSchedule(files){
   impCtl=new AbortController();S.imp={state:'busy',msg:'أجهّز الملف…'};render();
@@ -878,8 +931,46 @@ Rules: day is 0=Sunday(الأحد),1=Monday(الاثنين),2=Tuesday(الثلا
   }catch(e){S.imp=null;const m=sampleErr(e);if(m)toast(m,4000)}
   render();
 }
+/* university PDF roster (كشوف الشعب): reads ID + name from the PDF text, no internet AI needed */
+async function pdfRoster(file,c){
+  S.rosterBusy=c.id;S.openCls=c.id;render();
+  try{
+    if(!window.pdfjsLib){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'}
+    const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+    const clean=x=>normDigits(String(x||'').normalize('NFKC').replace(/[\u200e\u200f\u202a-\u202e]/g,''));
+    const STATUS=/مسجل على الويب|مسموح|محروم|منسحب|مسجل/g,HDR=/الاسم|الرقم الجامعي|مسلسل|التوقيع|الموقف|حالة التسجيل|الشعبة|استاذ|الفصل|كشوف|صفحة/;
+    const looksRight=t=>(t.match(/(^|\s)(بنت|بن|ابن|آل|ال)(\s|$)/g)||[]).length;
+    const rv=t=>[...t].reverse().join('');const list=[],pages=[];
+    for(let i=1;i<=pdf.numPages;i++)pages.push((await (await pdf.getPage(i)).getTextContent()).items);
+    /* some PDFs store Arabic in visual order: decide once for the whole file */
+    const allTxt=pages.flat().map(it=>clean(it.str)).join(' '),flip=looksRight(rv(allTxt))>looksRight(allTxt);
+    const fixDir=t=>flip?rv(t).replace(/\d+/g,rv):t;let meta=null;
+    for(const its of pages){
+      const rows=new Map();
+      for(const it of its){const str=clean(it.str);if(!str.trim())continue;const y=Math.round(it.transform[5]/3);
+        if(!rows.has(y))rows.set(y,[]);rows.get(y).push({x:it.transform[4],str})}
+      for(const items of rows.values()){
+        const all=items.map(o=>o.str).join(' ');
+        /* header: «الشعبة  الابتكار والتقنيات الناشئة-13384» */
+        if(!meta){const hs=items.sort((a,b)=>b.x-a.x).map(o=>fixDir(o.str).trim()).filter(Boolean);
+          if(hs.some(t=>/^الشعبة\s*:?$/.test(t))||/الشعبة/.test(hs.join(' '))&&!/\b4\d{8}\b/.test(all)){
+            const v=hs.filter(t=>!/^الشعبة\s*:?$/.test(t)).join(' ').replace(/الشعبة\s*:?/,'').trim();
+            const sec=(v.match(/\d{3,7}/)||[''])[0],course=v.replace(sec,' ').replace(/[-–:]/g,' ').replace(/\s+/g,' ').trim();
+            if(AR.test(course))meta={course,sec}}}const id=(all.match(/\b4\d{8}\b/)||all.match(/\b\d{7,10}\b/)||[])[0];if(!id)continue;
+        const parts=items.sort((a,b)=>b.x-a.x).map(o=>o.str).map(fixDir).filter(t=>AR.test(t)&&!HDR.test(t)).map(t=>t.replace(STATUS,' '));
+        const name=parts.join(' ').replace(STATUS,' ').replace(/\s+/g,' ').trim();
+        if(name&&name.split(' ').length>=2)list.push({name,uid:id})}
+    }
+    const r=dedupe(c,list);r.meta=meta;
+    if(!r.list.length)toast(r.dup?'كل الأسماء موجودة مسبقًا':'لم أستطع قراءة الأسماء من هذا الملف. جرّبي ملف Excel أو الصقي الأسماء.',4500);
+    S.parsed[c.id]=r.list.length?r:null;
+  }catch(e){toast(navigator.onLine===false?'قراءة PDF تحتاج اتصالًا أول مرة':'تعذّرت قراءة ملف PDF',4000)}
+  S.rosterBusy=null;render();
+}
 async function rosterFromFile(file,c){
   if(/\.(xlsx|xls|csv|txt)$/i.test(file.name)){await parseSheetRoster(file,c);return}
+  if(/\.pdf$/i.test(file.name)||file.type==='application/pdf'){await pdfRoster(file,c);return}
   if(!sampleFn){toast('في هذه النسخة ارفع الكشف بصيغة Excel أو CSV، أو الصق الأسماء.',4000);return}
   S.rosterBusy=c.id;S.openCls=c.id;render();
   try{const{images}=await gather([file]);
@@ -917,6 +1008,16 @@ async function parseSheetRoster(file,c){
     else S.parsed[c.id]=r;
   }catch(e){toast('تعذّرت قراءة الملف. تحقق من الاتصال أو الصق الأسماء.',3500)}
   S.openCls=c.id;render();
+}
+
+/* does an uploaded roster look like it belongs to another section? */
+function rosterWarn(c,P){
+  if(!P)return '';const m=P.meta,ids=new Set(P.list.map(x=>x.uid).filter(Boolean));
+  if(m&&m.sec&&c.secNo&&m.sec!==c.secNo)return `رقم الشعبة في الكشف (${m.sec}) يختلف عن رقم هذه الشعبة (${c.secNo}).`;
+  if(ids.size){let best=null,n=0;for(const o of secs()){if(o.id===c.id)continue;const k=(o.students||[]).filter(s=>ids.has(s.uid)).length;if(k>n){n=k;best=o}}
+    if(best&&n>=Math.max(3,ids.size*0.3))return `${n} من طالبات هذا الكشف موجودات في «${best.short||best.name}». يبدو أنه كشف شعبة أخرى.`}
+  if(m&&m.course){const nm=c.name.replace(/\s+/g,'');if(!nm.includes(m.course.replace(/\s+/g,''))&&!(m.sec&&nm.includes(m.sec)))return `اسم المقرر في الكشف «${m.course}» لا يطابق اسم هذه الشعبة.`}
+  return '';
 }
 
 /* ---------- render ---------- */
@@ -957,16 +1058,17 @@ function cancelLecture(reason){
 async function saveImport(){
   const I=S.imp,t=term(),list=I.sections.filter(s=>s.on&&s.meetings.length);if(!list.length){toast('اختر شعبة واحدة على الأقل');return}
   S.imp=null;let n=0;const base=Date.now();
-  await write(async()=>{for(const s of list){const ex=secs().find(c=>c.name.replace(/\s+/g,'')===s.name.replace(/\s+/g,''));
+  await write(async()=>{for(const s of list){const ex=(s.secNo&&secs().find(c=>c.secNo===s.secNo))||secs().find(c=>c.name.replace(/\s+/g,'')===s.name.replace(/\s+/g,''));
       const meetings=s.meetings.map(m=>({id:rid('m'),day:m.day,start:m.start,end:m.end||'',room:m.room||'',hours:+m.hours||1}));
-      if(ex)await db.doc('classes/'+ex.id).update({meetings,short:s.short||ex.short});
-      else await db.doc('classes/'+rid('c')).set({term:t.id,name:s.name,short:s.short||s.name.slice(0,16),order:base+n,students:[],meetings});n++}},`حُفظت ${list.length} شعب. ارفع الآن كشف كل شعبة.`);
+      const extra=s.secNo?{secNo:s.secNo}:{};
+      if(ex)await db.doc('classes/'+ex.id).update({meetings,short:s.short||ex.short,...extra});
+      else await db.doc('classes/'+rid('c')).set({term:t.id,name:s.name,short:s.short||s.name.slice(0,16),order:base+n,students:[],meetings,...extra});n++}},`حُفظت ${list.length} شعب. ارفعي الآن كشف كل شعبة.`);
   render();
 }
 document.addEventListener('click',async e=>{
   const t=e.target.closest('[data-tab],[data-act]');if(!t)return;
   if(t.dataset.tab&&!t.dataset.act){S.tab=t.dataset.tab;S.armed=null;render();window.scrollTo(0,0);return}
-  const a=t.dataset.act;if(!['clearSample','delCls','delSheet','newTerm'].includes(a))S.armed=null;
+  const a=t.dataset.act;if(!['clearSample','delCls','delSheet','newTerm','addStu'].includes(a))S.armed=null;
   const c=t.dataset.c&&cById(t.dataset.c),I=S.imp;
   switch(a){
   case 'tab':S.tab=t.dataset.tab;render();window.scrollTo(0,0);return;
@@ -991,6 +1093,7 @@ document.addEventListener('click',async e=>{
   case 'xls':exportXls(t.dataset.scope);return;
   case 'impCancel':impCtl&&impCtl.abort();S.imp=null;render();return;
   case 'impSave':saveImport();return;
+  case 'ttRead':{const v=($('ttx')||{}).value||'';if(!v.trim()){toast('الصقي الجدول أولًا');$('ttx')&&$('ttx').focus();return}showTimetable(v);return}
   case 'impRmMeet':I.sections[+t.dataset.i].meetings.splice(+t.dataset.j,1);render();return;
   case 'impAddMeet':I.sections[+t.dataset.i].meetings.push({day:0,start:'08:00',end:'09:50',room:'',hours:2});render();return;
   case 'saveProf':{const pf={title:$('pt').value,name:$('pn').value.trim()};write(()=>db.doc('config/settings').set({...S.settings,profile:pf}),'حُفظ');return}
@@ -1007,10 +1110,15 @@ document.addEventListener('click',async e=>{
     write(()=>db.doc('classes/'+c.id).update({meetings:[...(c.meetings||[]),{id:rid('m'),day,start:'08:00',end:'08:50',room:'',hours:1}]}));return}
   case 'rmMeet':S.openCls=c.id;write(()=>db.doc('classes/'+c.id).update({meetings:(c.meetings||[]).filter(m=>m.id!==t.dataset.mid)}),'حُذف الموعد');return;
   case 'addStu':{S.openCls=c.id;let r=S.parsed[c.id];
+    if(r&&rosterWarn(c,r)&&S.armed!=='add:'+c.id){S.armed='add:'+c.id;render();toast('تأكدي أن الكشف لهذه الشعبة',3000);return}S.armed=null;
     if(!r){const ta=$('ta-'+c.id);const txt=ta.value;if(!txt.trim()){toast('ارفع الكشف أو الصق الأسماء أولًا');return}r=dedupe(c,fromText(txt));ta.value='';if(!r.list.length){toast('كل الأسماء موجودة مسبقًا');return}}
     S.parsed[c.id]=null;
     const students=[...(c.students||[]),...r.list.map(x=>({id:rid('s'),name:x.name,uid:x.uid}))].sort((a,b)=>coll.compare(a.name,b.name));
-    write(()=>db.doc('classes/'+c.id).update({students}),`أُضيفت ${r.list.length} طالبة ورُتّبن أبجديًا`);return}
+    const upd={students};if(r.meta&&r.meta.sec&&!c.secNo)upd.secNo=r.meta.sec;
+    write(()=>db.doc('classes/'+c.id).update(upd),`أُضيفت ${r.list.length} طالبة ورُتّبن أبجديًا`);return}
+  case 'useMeta':{const m=S.parsed[c.id]&&S.parsed[c.id].meta;if(!m)return;S.openCls=c.id;
+    const name=(m.sec?'شعبة '+m.sec+' — ':'')+m.course,short=((m.sec||'')+' '+(m.course.split(/\s+/)[0]||'')).trim();
+    write(()=>db.doc('classes/'+c.id).update(m.sec?{name,short,secNo:m.sec}:{name,short}),'تمت تسمية الشعبة من الكشف');return}
   case 'rmStu':S.openCls=c.id;write(()=>db.doc('classes/'+c.id).update({students:(c.students||[]).filter(s=>s.id!==t.dataset.s)}),'حُذفت الطالبة');return;
   case 'delCls':{const cid=t.dataset.c;if(S.armed!=='cls:'+cid){S.armed='cls:'+cid;S.openCls=cid;render();return}S.armed=null;
     const docs=allAtt().filter(d=>d.classId===cid).map(d=>d.id);
@@ -1040,6 +1148,7 @@ document.addEventListener('change',e=>{
   if(k==='term'){const id=t.value;S.sheet=null;write(()=>db.doc('config/settings').set({...S.settings,currentTerm:id}));return}
   if(k==='restore'){const f=t.files&&t.files[0];if(!f)return;f.text().then(x=>{try{const o=JSON.parse(x);if(!o||typeof o!=='object'||!o.config)throw 0;
     S.restore={data:o,n:Object.keys(o.classes||{}).length,a:Object.keys(o.attendance||{}).length};render()}catch(e){toast('هذا ليس ملف نسخة احتياطية صالح')}});return}
+  if(k==='ttfile'){if(t.files&&t.files[0])timetableFile(t.files[0]);return}
   if(k==='sched'){if(t.files&&t.files.length)importSchedule([...t.files]);return}
   if(k==='file'){const c=cById(t.dataset.c);if(t.files[0])rosterFromFile(t.files[0],c);return}
   if(k==='cname'){const c=cById(t.dataset.c),v=t.value.trim();if(!v)return;S.openCls=c.id;write(()=>db.doc('classes/'+c.id).update({[t.dataset.k]:v}));return}

@@ -1,7 +1,8 @@
 /* سجل الحضور — الربط بالإنترنت (Supabase) والأعذار
    فكرة وتصميم — نعيمه الرشيدي */
 (function(){
-const CFG=Object.assign({url:'',key:''},window.REG_CONFIG||{},lsGet('reg.cloudcfg')||{});
+const CFG=Object.assign({url:'',key:'',studentDomain:'albaha.onmicrosoft.com'},window.REG_CONFIG||{},lsGet('reg.cloudcfg')||{});
+const isStudentEmail=e=>String(e||'').toLowerCase().endsWith('@'+String(CFG.studentDomain||'').toLowerCase())&&!!CFG.studentDomain;
 const KIND_EMO={'مرضي':'🤒','وفاة':'🖤','ظرف عائلي':'🏠','موعد رسمي':'📄','أخرى':'✏️'};
 const REJECT=['لا يوجد ما يثبت','خارج المدة المسموحة','العذر غير مقبول','التاريخ غير صحيح'];
 const C={sb:null,user:null,owner:false,status:'off',err:'',pending:new Set(lsGet('reg.cloud.pending')||[]),lastPull:lsGet('reg.cloud.lastPull')||'',
@@ -35,12 +36,17 @@ async function connect(){
   if(C.user)await afterLogin();else{C.status='login';render()}
 }
 async function afterLogin(){
-  if(!online()){C.status='offline';C.owner=lsGet('reg.cloud.owner')===C.user.id;render();return}
-  try{const {data,error}=await C.sb.rpc('claim_owner');if(error)throw error;C.owner=!!data;lsSet('reg.cloud.owner',C.owner?C.user.id:'')}
-  catch(e){C.status='error';C.err='تعذّر التحقق من الحساب. تأكدي أن نص الإعداد نُفّذ في Supabase.';render();return}
-  if(!C.owner){C.status='notowner';render();return}
-  if(!C.lastPull){const {count}=await C.sb.from('docs').select('path',{count:'exact',head:true});
-    if(!count){LDB.paths().forEach(p=>C.pending.add(p));savePending()}}
+  /* every teacher has her own account and data; a student (university-email) account cannot be a teacher */
+  if(isStudentEmail(C.user.email)){C.owner=false;C.status='notowner';C.err='هذا إيميل طالبة. حساب الأستاذة يكون بإيميلك أنتِ.';render();return}
+  const prev=lsGet('reg.cloud.uid');
+  if(prev&&prev!==C.user.id){
+    if(C.pending.size||Object.keys(S.outbox).length){C.err='على هذا الجهاز بيانات حساب آخر لم تُرفع بعد. سجّلي دخول الحساب السابق أولًا حتى تُرفع.';C.owner=false;C.status='error';await C.sb.auth.signOut();render();return}
+    LDB.load({});C.lastPull='';lsSet('reg.cloud.lastPull','');C.ex=[];C.exLoaded=false;C.ann=[];C.q=[];saveQ();S.sheet=null}
+  lsSet('reg.cloud.uid',C.user.id);C.owner=true;
+  if(!online()){C.status='offline';render();return}
+  try{if(!C.lastPull){const {count,error}=await C.sb.from('docs').select('path',{count:'exact',head:true});if(error)throw error;
+    if(!count){LDB.paths().forEach(p=>C.pending.add(p));savePending()}}}
+  catch(e){C.status='error';C.err='تعذّر الاتصال بقاعدة البيانات. تأكدي أن نص الإعداد (setup.sql) نُفّذ في Supabase.';render();return}
   await sync(true);
 }
 async function sync(full){
@@ -50,8 +56,8 @@ async function sync(full){
     /* push */
     const paths=[...C.pending];let secChanged=false;
     for(let i=0;i<paths.length;i+=200){const part=paths.slice(i,i+200);
-      const v0={};const rows=part.map(p=>{v0[p]=C.ver[p]||0;const d=LDB.raw(p);secChanged=true;return{path:p,data:d,deleted:d==null}});
-      const {error}=await C.sb.from('docs').upsert(rows);if(error)throw error;part.forEach(p=>{if((C.ver[p]||0)===v0[p])C.pending.delete(p)});savePending()}
+      const v0={};const rows=part.map(p=>{v0[p]=C.ver[p]||0;const d=LDB.raw(p);secChanged=true;return{owner:C.user.id,path:p,data:d,deleted:d==null}});
+      const {error}=await C.sb.from('docs').upsert(rows,{onConflict:'owner,path'});if(error)throw error;part.forEach(p=>{if((C.ver[p]||0)===v0[p])C.pending.delete(p)});savePending()}
     await flushQ();
     if(secChanged||full)await publishSections();
     /* pull */
@@ -69,11 +75,23 @@ async function sync(full){
 async function publishSections(){
   const t=term();if(!t)return;const list=secs();
   const since=ymd(new Date(Date.now()-35*864e5));const A=allAtt();
-  const rows=list.map(c=>({id:c.id,name:c.name,short:c.short||'',meetings:(c.meetings||[]).map(m=>({id:m.id,day:m.day,start:m.start,end:endOf(m),room:m.room||'',hours:m.hours})),term_start:t.start,weeks:t.weeks,teacher:[(S.settings.profile||{}).title,(S.settings.profile||{}).name].filter(Boolean).join(' '),
+  const rows=list.map(c=>({id:c.id,owner:C.user.id,name:c.name,short:c.short||'',meetings:(c.meetings||[]).map(m=>({id:m.id,day:m.day,start:m.start,end:endOf(m),room:m.room||'',hours:m.hours})),term_start:t.start,weeks:t.weeks,teacher:[(S.settings.profile||{}).title,(S.settings.profile||{}).name].filter(Boolean).join(' '),
     cancelled:A.filter(d=>d.classId===c.id&&d.cancelled&&d.date>=since).map(d=>({date:d.date,meeting_id:d.meetingId,reason:d.reason||''}))}));
   if(rows.length){const {error}=await C.sb.from('sections_public').upsert(rows);if(error)throw error}
-  const ids=list.map(c=>c.id);const {data}=await C.sb.from('sections_public').select('id');
-  const gone=(data||[]).map(r=>r.id).filter(id=>!ids.includes(id));if(gone.length)await C.sb.from('sections_public').delete().in('id',gone);
+  await publishRoster(list);
+  const ids=list.map(c=>c.id);const {data}=await C.sb.from('sections_public').select('id').eq('owner',C.user.id);
+  const gone=(data||[]).map(r=>r.id).filter(id=>!ids.includes(id));if(gone.length)await C.sb.from('sections_public').delete().eq('owner',C.user.id).in('id',gone);
+}
+/* the teacher's rosters, as (section, university ID): lets each student see only her own sections */
+async function publishRoster(list){
+  const me=C.user.id,want=new Map();
+  for(const c of list)for(const st of c.students||[]){const u=normId(st.uid);if(u)want.set(c.id+'|'+u,{section_id:c.id,uid:u,name:st.name||'',owner:me})}
+  let have=[];for(let from=0;;from+=1000){const {data,error}=await C.sb.from('roster').select('section_id,uid,name').eq('owner',me).range(from,from+999);if(error)throw error;have=have.concat(data||[]);if(!data||data.length<1000)break}
+  const hk=new Map(have.map(r=>[r.section_id+'|'+r.uid,r]));
+  const up=[...want.entries()].filter(([k,v])=>!hk.has(k)||hk.get(k).name!==v.name).map(([,v])=>v);
+  for(let i=0;i<up.length;i+=500){const {error}=await C.sb.from('roster').upsert(up.slice(i,i+500),{onConflict:'section_id,uid'});if(error)throw error}
+  const gone=new Map();for(const k of hk.keys())if(!want.has(k)){const[sid,u]=k.split('|');if(!gone.has(sid))gone.set(sid,[]);gone.get(sid).push(u)}
+  for(const[sid,us]of gone)for(let i=0;i<us.length;i+=200){const {error}=await C.sb.from('roster').delete().eq('owner',me).eq('section_id',sid).in('uid',us.slice(i,i+200));if(error)throw error}
 }
 /* actions done without internet wait here and are sent in order once online */
 async function flushQ(){
@@ -90,9 +108,9 @@ function overlayQ(){
     else if(a.t==='annDel')C.ann=C.ann.filter(x=>x.id!==a.id)}
 }
 function enqueue(a){C.q.push(a);saveQ();overlayQ();lsSet('reg.ann',C.ann);if(online())sync();else renderHead(computeStats())}
-async function loadAnn(){const {data,error}=await C.sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(200);if(!error){C.ann=data||[];overlayQ();lsSet('reg.ann',C.ann)}}
+async function loadAnn(){const {data,error}=await C.sb.from('announcements').select('*').eq('owner',C.user.id).order('created_at',{ascending:false}).limit(200);if(!error){C.ann=data||[];overlayQ();lsSet('reg.ann',C.ann)}}
 async function loadExcuses(){
-  const {data,error}=await C.sb.from('excuses').select('*').order('created_at',{ascending:false}).limit(1000);if(error)throw error;
+  const {data,error}=await C.sb.from('excuses').select('*').eq('teacher',C.user.id).order('created_at',{ascending:false}).limit(1000);if(error)throw error;
   C.ex=data||[];overlayQ();C.exAt=Date.now();C.exLoaded=true;
 }
 window.addEventListener('online',()=>{if(C.user)afterLogin()});
@@ -192,13 +210,15 @@ vManage=function(){let h=_vManage();
   else if(!C.user)box=`<p class="hint">${C.authMode==='up'?'أنشئي حسابك مرة واحدة. سيصلك بريد تأكيد، اضغطي الرابط فيه ثم ارجعي وسجّلي الدخول.':'سجّلي دخولك لتتزامن بياناتك وتصلك الأعذار.'}</p>
     <div class="setgrid"><div class="f"><label for="ce">البريد الإلكتروني</label><input id="ce" type="email" autocomplete="email" dir="ltr"></div><div class="f"><label for="cp">كلمة المرور</label><input id="cp" type="password" autocomplete="${C.authMode==='up'?'new-password':'current-password'}" dir="ltr"></div></div>
     <div class="inline"><button class="btn pri" data-act="cAuth">${C.authMode==='up'?'إنشاء الحساب':'تسجيل الدخول'}</button><button class="lnk" data-act="cMode">${C.authMode==='up'?'عندي حساب':'أول مرة؟ أنشئي حسابًا'}</button></div>`;
-  else box=`<div class="state"><span>${C.owner?'✅ مرتبطة':C.status==='notowner'?'⚠️ هذا الحساب ليس صاحب السجل':'…'} <span class="hint" dir="ltr">${esc(C.user.email||'')}</span></span><button class="lnk mut" data-act="cOut">تسجيل الخروج</button></div>
+  else box=`<div class="state"><span>${C.owner?'✅ مرتبطة':C.status==='notowner'?'⚠️ هذا الحساب ليس حساب أستاذة':'…'} <span class="hint" dir="ltr">${esc(C.user.email||'')}</span></span><button class="lnk mut" data-act="cOut">تسجيل الخروج</button></div>
     <div class="facts num"><span>الحالة: <b>${{ok:'متزامن',syncing:'جارٍ المزامنة',offline:'بدون اتصال',error:'خطأ',notowner:'غير مصرّح'}[C.status]||'—'}</b></span><span>بانتظار الرفع: <b>${C.pending.size+C.q.length}</b></span></div>
     ${C.owner?`<div class="inline"><button class="btn" data-act="exLink">نسخ رابط الأعذار للطالبات</button><button class="btn" data-act="cSync">مزامنة الآن</button></div>
     <div class="setgrid"><div class="f"><label for="xd">العذر متأخر بعد (أيام)</label><input id="xd" type="number" min="1" max="60" value="${lateDays()}"></div></div><div><button class="btn sm" data-act="cDays">حفظ</button></div>`:''}`;
   if(C.err)box+=`<div class="banner err" style="margin:0">${esc(C.err)}</div>`;
   const sec=`<section class="sec"><h2>الربط بالإنترنت والأعذار</h2><div class="card form">${box}<p class="rule">التحضير والإعداد يعملان بدون إنترنت ويُحفظان على جوالك ثم يُرفعان تلقائيًا. أعذار الطالبات ومرفقاتها تبقى في قاعدة البيانات على الإنترنت فقط ولا تُخزَّن على جوالك.</p></div></section>`;
-  return sec+h};
+  /* connection section goes last, just above the backup section, so the timetable comes first */
+  const i=h.indexOf('<section class="sec"><h2>النسخة الاحتياطية');
+  return i>=0?h.slice(0,i)+sec+h.slice(i):h+sec};
 
 /* ---- actions ---- */
 document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-act]');if(!t)return;const a=t.dataset.act;
@@ -223,10 +243,11 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   case 'exLink':{try{await navigator.clipboard.writeText(studentLink());toast('نُسخ رابط الأعذار')}catch(_){toast(studentLink(),5000)}break}
   case 'cMode':C.authMode=C.authMode==='up'?'in':'up';render();break;
   case 'cAuth':{const email=document.getElementById('ce').value.trim(),pw=document.getElementById('cp').value;if(!email||pw.length<6){toast('اكتبي البريد وكلمة مرور من ٦ أحرف على الأقل');return}
+    if(isStudentEmail(email)){C.err='هذا إيميل طالبة. سجّلي بإيميلك الخاص كأستاذة.';render();return}
     const r=C.authMode==='up'?await C.sb.auth.signUp({email,password:pw,options:{emailRedirectTo:location.href.replace(/[#?].*$/,'')}}):await C.sb.auth.signInWithPassword({email,password:pw});
     if(r.error){C.err=/confirm/i.test(r.error.message)?'أكّدي بريدك أولًا من الرسالة التي وصلتك':/Invalid login/i.test(r.error.message)?'البريد أو كلمة المرور غير صحيحة':r.error.message;render();return}
     C.err='';if(C.authMode==='up'&&!(r.data&&r.data.session)){toast('أُرسل بريد التأكيد، اضغطي الرابط ثم سجّلي الدخول',5000);C.authMode='in';render()}break}
-  case 'cOut':await C.sb.auth.signOut();C.owner=false;render();break;
+  case 'cOut':if(C.pending.size||C.q.length){toast('انتظري حتى تُرفع البيانات ثم سجّلي الخروج',3500);sync();break}await C.sb.auth.signOut();C.owner=false;render();break;
   case 'cSync':sync(true);break;
   case 'cDays':{const v=Math.max(1,parseInt(document.getElementById('xd').value,10)||7);write(()=>db.doc('config/settings').set({...S.settings,excuseDays:v}),'حُفظ');break}
   }
