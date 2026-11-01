@@ -359,7 +359,7 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١١</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><button class="lnk mut" data-role-switch>تغيير: طالبة أم أستاذة؟</button><p style="font-size:.7rem;opacity:.6">الإصدار ١٢</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -1087,7 +1087,7 @@ async function saveImport(){
 document.addEventListener('click',async e=>{
   const t=e.target.closest('[data-tab],[data-act]');if(!t)return;
   if(t.dataset.tab&&!t.dataset.act){S.tab=t.dataset.tab;S.armed=null;render();window.scrollTo(0,0);return}
-  const a=t.dataset.act;if(!['clearSample','delCls','delSheet','newTerm','addStu','gDel'].includes(a))S.armed=null;
+  const a=t.dataset.act;if(!['clearSample','delCls','delSheet','newTerm','addStu','gDel','cOut'].includes(a))S.armed=null;
   const c=t.dataset.c&&cById(t.dataset.c),I=S.imp;
   switch(a){
   case 'tab':S.tab=t.dataset.tab;render();window.scrollTo(0,0);return;

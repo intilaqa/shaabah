@@ -192,7 +192,9 @@ renderHead=function(stats){_renderHead(stats);
   const net=document.querySelector('#sum .net');
   if(net&&C.sb){const pend=C.pending.size+Object.keys(S.outbox).length+C.q.length;
     const t=C.status==='ok'?(pend?'جارٍ الرفع':'متزامن'):C.status==='syncing'?'جارٍ المزامنة':C.status==='offline'?(pend?`${pend} بانتظار النت`:'بدون اتصال'):C.status==='login'?'غير مسجّلة':C.status==='error'?'خطأ في الاتصال':'على الجهاز';
-    net.className='net'+(C.status==='ok'&&!pend?'':' off');net.innerHTML='<i></i>'+t}
+    net.className='net'+(C.status==='ok'&&!pend?'':' off');net.innerHTML='<i></i>'+t;
+    if(C.user){const b=document.createElement('button');b.className='pill '+(S.armed==='out'?'deny':'muted');b.dataset.act='cOut';b.title=C.user.email||'';
+      b.textContent=S.armed==='out'?'تأكيد الخروج':'خروج';net.after(b)}}
   const n=C.ex.filter(e=>e.status==='pending').length,b=document.querySelector('.tabs button[data-tab="exc"]');
   if(b){b.querySelector('.dot')?.remove();if(n&&S.tab!=='exc'){const s=document.createElement('span');s.className='dot num';s.style.background='var(--accent)';s.textContent=n;b.appendChild(s)}}
 };
@@ -288,6 +290,41 @@ vManage=function(){let h=_vManage();
   const i=h.indexOf('<section class="sec"><h2>النسخة الاحتياطية');
   return i>=0?h.slice(0,i)+sec+h.slice(i):h+sec};
 
+/* ---- sign-in (teachers) ---- */
+async function doAuth(email,pw){
+  email=String(email).trim();if(!email||pw.length<6){C.err='اكتبي البريد وكلمة مرور من ٦ أحرف على الأقل';render();return}
+  if(isStudentEmail(email)){C.err='هذا إيميل طالبة. صفحة الطالبات من «أنا طالبة».';render();return}
+  if(!online()){C.err='تسجيل الدخول يحتاج اتصالًا بالإنترنت.';render();return}
+  C.authBusy=true;C.err='';render();
+  const r=C.authMode==='up'?await C.sb.auth.signUp({email,password:pw,options:{emailRedirectTo:location.href.replace(/[#?].*$/,'')}}):await C.sb.auth.signInWithPassword({email,password:pw});
+  C.authBusy=false;
+  if(r.error){const m=r.error.message||'';C.err=/confirm/i.test(m)?'أكّدي بريدك أولًا من الرسالة التي وصلتك، ثم سجّلي الدخول.':/Invalid login/i.test(m)?'البريد أو كلمة المرور غير صحيحة.':/registered|exists/i.test(m)?'هذا البريد مسجّل من قبل، سجّلي الدخول.':m;render();return}
+  C.err='';if(C.authMode==='up'&&!(r.data&&r.data.session)){C.authMode='in';C.err='';toast('أرسلنا رابط تأكيد إلى بريدك. اضغطيه ثم ارجعي وسجّلي الدخول.',7000)}
+  render();
+}
+/* every teacher signs in first, so her own data (and only hers) loads on any device */
+function gate(){
+  let el=document.getElementById('tgate');
+  const show=configured()&&C.sb&&!C.user&&C.status!=='off';
+  if(!show){if(el)el.hidden=true;return}
+  if(!el){el=document.createElement('div');el.id='tgate';el.className='role';document.body.appendChild(el)}
+  el.hidden=false;const up=C.authMode==='up';
+  el.innerHTML=`<div class="role-in"><span class="role-mark"><i></i></span>
+    <h1>${up?'إنشاء حساب أستاذة':'دخول الأستاذة'}</h1>
+    <p>${up?'حساب واحد لكل أستاذة. شعبك وطالباتك وأعذارهن خاصة بك وحدك.':'ادخلي بحسابك لتظهر شعبك وبياناتك على هذا الجهاز.'}</p>
+    <div class="card form" style="width:100%;text-align:start">
+      <div class="f"><label for="ge">البريد الإلكتروني</label><input id="ge" type="email" dir="ltr" autocomplete="email"></div>
+      <div class="f"><label for="gp">كلمة المرور</label><input id="gp" type="password" dir="ltr" autocomplete="${up?'new-password':'current-password'}"></div>
+      ${C.err?`<div class="banner err" style="margin:0">${esc(C.err)}</div>`:''}
+      ${!online()?'<div class="banner warn" style="margin:0">لا يوجد اتصال. الدخول أول مرة يحتاج الإنترنت.</div>':''}
+      <button class="btn pri lg" data-act="gAuth"${C.authBusy?' disabled':''}>${C.authBusy?'لحظة…':up?'إنشاء الحساب':'دخول'}</button>
+      <div class="state"><button class="lnk" data-act="cMode">${up?'عندي حساب — دخول':'أستاذة جديدة؟ أنشئي حسابًا'}</button>${up?'':'<button class="lnk mut" data-act="gReset">نسيت كلمة المرور</button>'}</div>
+    </div>
+    <button class="lnk mut" data-role-switch>أنا طالبة</button></div>`;
+}
+const _render=render;render=function(){_render();gate()};
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='gp'){const b=document.querySelector('[data-act="gAuth"]');b&&b.click()}});
+
 /* ---- actions ---- */
 document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-act]');if(!t)return;const a=t.dataset.act;
   switch(a){
@@ -316,12 +353,15 @@ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-ac
   case 'exCopy':{const e=C.ex.find(x=>x.id===t.dataset.id);try{await navigator.clipboard.writeText(replyFor(e));toast('نُسخ الرد، الصقيه في واتساب')}catch(_){toast('تعذّر النسخ')}break}
   case 'exLink':{try{await navigator.clipboard.writeText(studentLink());toast('نُسخ رابط الأعذار')}catch(_){toast(studentLink(),5000)}break}
   case 'cMode':C.authMode=C.authMode==='up'?'in':'up';render();break;
-  case 'cAuth':{const email=document.getElementById('ce').value.trim(),pw=document.getElementById('cp').value;if(!email||pw.length<6){toast('اكتبي البريد وكلمة مرور من ٦ أحرف على الأقل');return}
-    if(isStudentEmail(email)){C.err='هذا إيميل طالبة. سجّلي بإيميلك الخاص كأستاذة.';render();return}
-    const r=C.authMode==='up'?await C.sb.auth.signUp({email,password:pw,options:{emailRedirectTo:location.href.replace(/[#?].*$/,'')}}):await C.sb.auth.signInWithPassword({email,password:pw});
-    if(r.error){C.err=/confirm/i.test(r.error.message)?'أكّدي بريدك أولًا من الرسالة التي وصلتك':/Invalid login/i.test(r.error.message)?'البريد أو كلمة المرور غير صحيحة':r.error.message;render();return}
-    C.err='';if(C.authMode==='up'&&!(r.data&&r.data.session)){toast('أُرسل بريد التأكيد، اضغطي الرابط ثم سجّلي الدخول',5000);C.authMode='in';render()}break}
-  case 'cOut':if(C.pending.size||C.q.length){toast('انتظري حتى تُرفع البيانات ثم سجّلي الخروج',3500);sync();break}await C.sb.auth.signOut();C.owner=false;render();break;
+  case 'cAuth':case 'gAuth':{const g=a==='gAuth';await doAuth((document.getElementById(g?'ge':'ce')||{}).value||'',(document.getElementById(g?'gp':'cp')||{}).value||'');break}
+  case 'gReset':{const email=((document.getElementById('ge')||{}).value||'').trim();if(!email){C.err='اكتبي بريدك أولًا';render();return}
+    const r=await C.sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.replace(/[#?].*$/,'')});C.err='';toast(r.error?'تعذّر الإرسال':'أرسلنا رابط تغيير كلمة المرور إلى بريدك',5000);break}
+  case 'cOut':{if(C.pending.size||C.q.length||Object.keys(S.outbox).length){toast(online()?'لحظة، أرفع بياناتك أولًا ثم اضغطي خروج مرة ثانية':'لا يمكن الخروج الآن: بياناتك لم تُرفع بعد. اتصلي بالإنترنت أولًا.',4500);sync();break}
+    if(S.armed!=='out'){S.armed='out';render();toast('اضغطي «تأكيد الخروج» — بياناتك محفوظة في حسابك وتعود عند الدخول',3500);return}S.armed=null;
+    await C.sb.auth.signOut();C.owner=false;C.user=null;
+    LDB.load({});C.lastPull='';lsSet('reg.cloud.lastPull','');lsSet('reg.cloud.uid','');C.pending.clear();savePending();
+    C.ex=[];C.exLoaded=false;C.ann=[];lsSet('reg.ann',[]);C.q=[];saveQ();C.grades={};S.sheet=null;S.tab='home';C.status='login';
+    render();window.scrollTo(0,0);toast('تم تسجيل الخروج');break}
   case 'cSync':sync(true);break;
   case 'cDays':{const v=Math.max(1,parseInt(document.getElementById('xd').value,10)||7);write(()=>db.doc('config/settings').set({...S.settings,excuseDays:v}),'حُفظ');break}
   }
