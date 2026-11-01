@@ -117,7 +117,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ١٨</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ١٩</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -162,7 +162,7 @@ async function loadSections(){
       const owners=[...new Set(sections.map(x=>x.owner).filter(Boolean))];
       const a1=await sb.from('announcements').select('*').in('section_id',ids).order('created_at',{ascending:false}).limit(50);
       const a2=owners.length?await sb.from('announcements').select('*').is('section_id',null).in('owner',owners).order('created_at',{ascending:false}).limit(50):{data:[]};
-      ann=[...(a1.data||[]),...(a2.data||[])].sort((x,y)=>x.created_at<y.created_at?1:-1);
+      ann=[...new Map([...(a1.data||[]),...(a2.data||[])].map(x=>[x.id,x])).values()].sort((x,y)=>x.created_at<y.created_at?1:-1);
     }
     S.sections=sections;S.ann=ann;S.at=Date.now();S.err='';
     ls.set('exc.cache',{sections,ann,at:S.at,name:S.name,uid:S.uid});
@@ -314,10 +314,10 @@ function portal(){
   const today=ymd(new Date()),dow=new Date().getDay();
   const todayHad=mine.some(x=>(x.meetings||[]).some(m=>m.day===dow));
   if((!n||n.k>0)&&todayHad)top=`<div class="ann">✨ خلصتِ محاضرات اليوم، يعطيك العافية!</div>`+top;
-  const anns=S.ann.filter(a=>(!a.until||a.until>=today)&&(mine.some(x=>x.id===a.section_id)||(!a.section_id&&mine.some(x=>x.owner===a.owner))));
+  const anns=[...new Map((S.ann||[]).map(x=>[x.id,x])).values()].filter(a=>(!a.until||a.until>=today)&&(mine.some(x=>x.id===a.section_id)||(!a.section_id&&mine.some(x=>x.owner===a.owner))));
   const cxs=mine.flatMap(sec=>(sec.cancelled||[]).filter(c=>c.date>=today).map(c=>({...c,sec})));
   const rows=[0,1,2,3,4].flatMap(d=>mine.flatMap(sec=>(sec.meetings||[]).filter(m=>m.day===d).map(m=>({d,m,sec}))).sort((a,b)=>mins(a.m.start)-mins(b.m.start)));
-  const wk=rows.map(({d,m,sec})=>`<div class="${d===dow?'t':''}"><b>${DAYS[d]}</b><span class="num">${t12(m.start)}${m.end?' – '+t12(m.end):''}<small class="sub" style="display:block">${esc(sec.short||sec.name)} · ${esc(tName(sec))}</small></span>${m.room?`<span class="rm">${esc(m.room)}</span>`:'<span></span>'}</div>`).join('');
+  const wk=rows.map(({d,m,sec},i)=>`<div class="${d===dow?'t':''}"><b>${i&&rows[i-1].d===d?'':DAYS[d]}</b><span class="num">${t12(m.start)}${m.end?' – '+t12(m.end):''}<small class="sub" style="display:block">${esc(sec.short||sec.name)} · ${esc(tName(sec))}</small></span>${m.room?`<span class="rm">${esc(m.room)}</span>`:'<span></span>'}</div>`).join('');
   const d=DH[dhi%DH.length];
   const qb=S.queued?`<div class="q"><span>📤 ${S.queued===1?'عذر واحد محفوظ':S.queued+' أعذار محفوظة'} على جوالك ويُرسل تلقائيًا عند الاتصال</span>${online()?'<button data-a="flush">إرسال الآن</button>':''}</div>`:'';
   const offN=!online()&&S.at?`<p class="sub" style="font-size:.8rem">بدون اتصال · آخر تحديث ${esc(fD.format(new Date(S.at)))}</p>`:'';
