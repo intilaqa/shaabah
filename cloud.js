@@ -339,8 +339,8 @@ async function openFile(id){const e=C.ex.find(x=>x.id===id);if(!e||!e.file_path)
   document.getElementById('fileview')?.remove();
   const o=document.createElement('div');o.id='fileview';o.className='role';o.style.zIndex=80;
   o.innerHTML=`<div class="role-in" style="max-width:720px"><h1 style="font-size:1.2rem">مرفق عذر ${esc(e.student_name)}</h1>
-    ${isPdf?`<iframe src="${url}" style="width:100%;height:65vh;border:0;border-radius:14px;background:#fff"></iframe>`:`<img src="${url}" alt="المرفق" style="max-width:100%;max-height:65vh;border-radius:14px;box-shadow:0 10px 30px -18px rgba(0,0,0,.5)">`}
-    <div class="inline" style="justify-content:center"><a class="btn" href="${url}" download="${esc((e.student_name||'مرفق').split(' ')[0])}-عذر.${isPdf?'pdf':'jpg'}">تنزيل</a><button class="btn pri" data-act="fvClose">إغلاق</button></div></div>`;
+    ${isPdf?`<iframe src="${url}#toolbar=0" style="width:100%;height:65vh;border:0;border-radius:14px;background:#fff"></iframe>`:`<img src="${url}" alt="المرفق" style="max-width:100%;max-height:65vh;border-radius:14px;box-shadow:0 10px 30px -18px rgba(0,0,0,.5)">`}
+    <div class="inline" style="justify-content:center"><button class="btn pri" data-act="fvClose">إغلاق</button></div></div>`;
   document.body.appendChild(o);
 }
 function studentLink(){return location.href.replace(/[#?].*$/,'').replace(/[^/]*$/,'')+'excuse.html'}
