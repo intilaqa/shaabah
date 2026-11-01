@@ -133,7 +133,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><i></i>شعبتي</span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢٣</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٢٤</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -191,6 +191,14 @@ async function loadSections(){
 const IDB=(()=>{let p;const open=()=>p||(p=new Promise((ok,no)=>{const r=indexedDB.open('exc-outbox',1);r.onupgradeneeded=()=>r.result.createObjectStore('q',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}));
   const tx=(m,f)=>open().then(db=>new Promise((ok,no)=>{const t=db.transaction('q',m),st=t.objectStore('q');const r=f(st);t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error)}));
   return{put:v=>tx('readwrite',s=>s.put(v)),del:id=>tx('readwrite',s=>s.delete(id)),all:()=>tx('readonly',s=>s.getAll())}})();
+const netErr=e=>!e||e.name==='TypeError'||/fetch|network|Failed to|Load failed|timeout/i.test(String(e.message||e))||e.status===0;
+const whyErr=e=>{const m=String((e&&(e.message||e.error||e.details))||'');
+  return /not in this section|not in roster/i.test(m)?'رقمك الجامعي غير موجود في كشف هذه الشعبة. تأكدي من الشعبة أو أخبري أستاذتك.'
+    :/students only|JWT|jwt|auth/i.test(m)?'انتهت جلسة الدخول. اخرجي وادخلي بإيميلك الجامعي من جديد.'
+    :/unknown section/i.test(m)?'هذه الشعبة لم تعد موجودة. حدّثي الصفحة.'
+    :/lecture_date|check constraint/i.test(m)?'تاريخ المحاضرة غير صحيح.'
+    :/mime|size|payload too large|413/i.test(m)?'المرفق كبير أو نوعه غير مدعوم (الحد ٣ ميجا، صورة أو PDF).'
+    :'تعذّر الإرسال: '+m.slice(0,120)};
 const dupe=e=>e&&(e.code==='23505'||/duplicate|already exists/i.test(e.message||'')||e.statusCode==='409'||e.status===409);
 async function upload(x){
   let file_path=null;
@@ -202,7 +210,7 @@ let flushing=false;
 async function flushQ(){
   if(flushing||!sb||!S.user)return;flushing=true;
   try{const list=await IDB.all();S.queued=list.length;
-    if(online())for(const x of list){try{await upload(x);await IDB.del(x.id);S.queued--}catch(e){break}}if(online()&&list.length)loadMine()}
+    if(online())for(const x of list){try{await upload(x);await IDB.del(x.id);S.queued--}catch(e){if(netErr(e))break;await IDB.del(x.id);S.queued--;S.qErr=whyErr(e)}}if(online()&&list.length)loadMine()}
   catch(e){}finally{flushing=false;if(S.mode!=='form'||S.ref)render();else netDot()}
 }
 function netDot(){const n=$('net');if(!n)return;n.className='net'+(online()?'':' off');n.lastChild&&n.lastChild.nodeType===3?n.lastChild.textContent=online()?'':' بدون اتصال':n.append(online()?'':' بدون اتصال')}
@@ -383,7 +391,7 @@ function portal(){
   const rows=[0,1,2,3,4].flatMap(d=>mine.flatMap(sec=>(sec.meetings||[]).filter(m=>m.day===d).map(m=>({d,m,sec}))).sort((a,b)=>mins(a.m.start)-mins(b.m.start)));
   const wk=rows.map(({d,m,sec},i)=>`<div class="${d===dow?'t':''}"><b>${i&&rows[i-1].d===d?'':DAYS[d]}</b><span class="num">${t12(m.start)}${m.end?' – '+t12(m.end):''}<small class="sub" style="display:block">${esc(sec.short||sec.name)} · ${esc(tName(sec))}</small></span>${m.room?`<span class="rm">${esc(m.room)}</span>`:'<span></span>'}</div>`).join('');
   const d=DH[dhi%DH.length];
-  const qb=S.queued?`<div class="q"><span>📤 ${S.queued===1?'عذر واحد محفوظ':S.queued+' أعذار محفوظة'} على جوالك ويُرسل تلقائيًا عند الاتصال</span>${online()?'<button data-a="flush">إرسال الآن</button>':''}</div>`:'';
+  const qb=(S.qErr?`<div class="err">عذر محفوظ لم يُقبل: ${esc(S.qErr)}</div>`:'')+(S.queued?`<div class="q"><span>📤 ${S.queued===1?'عذر واحد محفوظ':S.queued+' أعذار محفوظة'} على جوالك ويُرسل تلقائيًا عند الاتصال</span>${online()?'<button data-a="flush">إرسال الآن</button>':''}</div>`:'');
   const offN=!online()&&S.at?`<p class="sub" style="font-size:.8rem">بدون اتصال · آخر تحديث ${esc(fD.format(new Date(S.at)))}</p>`:'';
   S.fresh=S.fresh||new Set();const seenA=ls.get('exc.annseen')||[],unseenA=anns.filter(a=>!seenA.includes(a.id)),newA=anns.filter(a=>!seenA.includes(a.id)||S.fresh.has(a.id));
   const tabs=[['home','🏠','الرئيسية'],['week','🗓️','جدولي'],['grades','📊','سجلي'],['msg','💬','رسائل'],['exc','📩','أعذاري']];
@@ -488,7 +496,7 @@ async function send(){
   const x={id,file:S.file||null,row:{student_name:S.name.trim().replace(/\s+/g,' '),student_uid:uidOf(S.uid),section_id:S.sec.id,lecture_date:S.lec.date,meeting_id:S.lec.m.id,kind:S.kind,body:S.body.trim()}};
   ls.set('exc.me',{name:S.name.trim(),uid:uidOf(S.uid)});
   let sent=false;
-  if(online()){try{await upload(x);sent=true}catch(e){}}
+  if(online()){try{await upload(x);sent=true}catch(e){if(!netErr(e)){S.sending=false;S.err=whyErr(e);render();return}}}
   if(!sent){try{await IDB.put({...x,at:Date.now()});S.queued++;S.saved=true}catch(e){S.sending=false;alertErr('تعذّر الإرسال والحفظ. حاولي مرة أخرى.');return}}
   S.ref=id.slice(0,6).toUpperCase();S.sending=false;render();if(sent)loadMine();
 }

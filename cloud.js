@@ -283,7 +283,7 @@ window.vExc=function(stats){
   </section><section class="sec"><div class="sec-h"><h2>أعذار الطالبات</h2><button class="lnk" data-act="exRefresh">${C.busy?'جارٍ التحديث…':'تحديث'}</button></div>
   ${!online()?`<div class="banner warn" style="margin:0">بدون اتصال. الأعذار محفوظة في قاعدة البيانات على الإنترنت فقط ولا تُخزَّن على جوالك${C.exLoaded?'، والمعروض هنا من آخر فتح للصفحة':''}. قراراتك تُرفع تلقائيًا عند الاتصال${C.q.length?` (<b class="num">${C.q.length}</b> بالانتظار)`:''}.</div>`:''}
   <div class="filters">${[['pending','بانتظارك'],['approved','معتمدة'],['rejected','مرفوضة']].map(([k,t])=>`<button data-act="exFilter" data-f="${k}" aria-pressed="${f===k}">${t} <span class="num">${cnt(k)}</span></button>`).join('')}</div>
-  <div class="rule" style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>🔗 رابط صفحة الطالبات: أرسليه لهن مرة واحدة، ومنه يدخلن بإيميلهن الجامعي ويرسلن الأعذار والرسائل</span><button class="btn sm" data-act="exLink">نسخ الرابط</button></div>`;
+`;
   const list=C.ex.filter(e=>e.status===f);
   if(!C.exLoaded)h+=`<div class="card empty"><b>${online()?'جارٍ جلب الأعذار…':'الأعذار تظهر عند الاتصال'}</b>تُقرأ الأعذار من قاعدة البيانات مباشرة ولا تُحفظ على جوالك.</div>`;
   else if(!list.length)h+=`<div class="card empty"><b>${f==='pending'?'لا أعذار بانتظارك':'لا شيء هنا بعد'}</b>${f==='pending'?'أي عذر ترسله طالبة يظهر هنا فور الاتصال.':''}</div>`;
