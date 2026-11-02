@@ -3,7 +3,7 @@
 -- كل أستاذة: حسابها وبياناتها منفصلة. الطالبات: يقرأن الشعب والإعلانات ويرسلن الأعذار فقط.
 
 -- ⚙️ نطاق إيميل الطالبات: الحساب الذي ينتهي بهذا النطاق = طالبة، ورقمها الجامعي هو ما قبل @
-create or replace function public.student_domain() returns text language sql immutable as $$ select 'albaha.onmicrosoft.com' $$;
+create or replace function public.student_domain() returns text language sql immutable as $$ select 'stu.bu.edu.sa' $$;
 create or replace function public.is_student() returns boolean language sql stable as
 $$ select coalesce(lower(auth.jwt()->>'email') like '%@'||public.student_domain(), false) $$;
 grant execute on function public.is_student() to anon, authenticated;

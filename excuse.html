@@ -212,7 +212,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><img class="logo" src="logo-mark.svg" alt=""><span>شعبتي</span></span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٥٣</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٥٤</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -269,7 +269,7 @@ const uidOf=s=>{s=toEn(s).trim();if(s.includes('@'))s=s.split('@')[0];return s.r
 const me=ls.get('exc.me')||{};
 const S={mode:'home',mySec:ls.get('exc.sec')||'',myT:ls.get('exc.teacher')||'',queued:0,ann:[],i:0,name:me.name||'',uid:me.uid||'',sec:null,lec:null,kind:'',body:'',file:null,fileName:'',sections:null,err:'',sending:false,ref:''};
 const CFG=window.REG_CONFIG||{};
-const DOMAIN=String(CFG.studentDomain||'albaha.onmicrosoft.com').toLowerCase();
+const DOMAIN=String(CFG.studentDomain||'stu.bu.edu.sa').toLowerCase();
 let sb=null;try{if(CFG.url&&CFG.key&&window.supabase)sb=window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'exc.auth'}})}catch(e){}
 /* signed-in student: her university ID comes from her university email */
 const emailOf=v=>{v=toEn(v).trim().toLowerCase();return v.includes('@')?v:(/^\d{5,12}$/.test(v)?v+'@'+DOMAIN:v)};

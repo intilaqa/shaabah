@@ -1,7 +1,7 @@
 /* سجل الحضور — الربط بالإنترنت (Supabase) والأعذار
    فكرة وتصميم — نعيمه الرشيدي */
 (function(){
-const CFG=Object.assign({url:'',key:'',studentDomain:'albaha.onmicrosoft.com'},window.REG_CONFIG||{},lsGet('reg.cloudcfg')||{});
+const CFG=Object.assign({url:'',key:'',studentDomain:'stu.bu.edu.sa'},window.REG_CONFIG||{},lsGet('reg.cloudcfg')||{});
 const TEACHER_DOMAIN=String(CFG.teacherDomain||'bu.edu.sa').toLowerCase();
 const isTeacherEmail=e=>String(e||'').toLowerCase().endsWith('@'+TEACHER_DOMAIN);
 const isStudentEmail=e=>String(e||'').toLowerCase().endsWith('@'+String(CFG.studentDomain||'').toLowerCase())&&!!CFG.studentDomain;
