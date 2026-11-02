@@ -389,7 +389,7 @@ function gate(){
   if(!show){if(el)el.hidden=true;return}
   if(!el){el=document.createElement('div');el.id='tgate';el.className='role';document.body.appendChild(el)}
   el.hidden=false;const up=C.authMode==='up';
-  el.innerHTML=`<div class="role-in"><span class="role-mark"><i></i></span>
+  el.innerHTML=`<div class="role-in"><img class="role-logo" src="logo-mark.svg" alt="شعبتي">
     <h1>${up?'إنشاء حساب أستاذة':'دخول الأستاذة'}</h1>
     <p>${up?'حساب واحد لكل أستاذة. شعبك وطالباتك وأعذارهن خاصة بك وحدك.':'ادخلي بحسابك لتظهر شعبك وبياناتك على هذا الجهاز.'}</p>
     <form class="card form" style="width:100%;text-align:start" onsubmit="return false" autocomplete="on">
