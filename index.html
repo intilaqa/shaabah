@@ -434,14 +434,15 @@ details.cls .inner{padding:12px 14px 14px;display:flex;flex-direction:column;gap
 </div></header>
 <div class="wrap" id="banner"></div>
 <main class="wrap" id="view"><div class="card empty"><b>جارٍ تحميل السجل…</b>يظهر هنا يومك وجدولك وحضور طالباتك.</div></main>
-<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><p style="font-size:.7rem;opacity:.6">الإصدار ٤٩</p></footer>
+<footer class="wrap credit"><span class="cr-line"></span><p>فكرة وتصميم — <b>نعيمه الرشيدي</b></p><p style="font-size:.7rem;opacity:.6">الإصدار ٥٠</p></footer>
 <div class="savebar" id="savebar" hidden><div class="wrap in" id="savebarIn"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
 <script>
 const JOKES=["للأخطبوط ثلاثة قلوب", "قلب الإنسان ينبض نحو ١٠٠ ألف مرة في اليوم", "ضوء الشمس يصل إلى الأرض في نحو ٨ دقائق و٢٠ ثانية", "القمر يبتعد عن الأرض نحو ٣٫٨ سم كل سنة", "عين النعامة أكبر من دماغها", "الدلافين تنام بنصف دماغها، والنصف الثاني يبقى صاحيًا", "الفراشة تتذوّق بأقدامها", "جسم الإنسان البالغ فيه ٢٠٦ عظمة", "الماء يغطي نحو ٧١٪ من سطح الأرض", "لسان الزرافة طوله نحو ٤٥ سم", "الموز يُصنَّف نباتيًا من التوت، والفراولة لا", "الإنسان يرمش نحو ١٥ إلى ٢٠ مرة في الدقيقة", "التمر فيه بوتاسيوم أكثر من الموز بنفس الوزن", "صوت الرعد سببه تمدّد الهواء بسرعة بعد حرارة البرق", "العسل المحفوظ جيدًا يبقى صالحًا سنوات طويلة جدًا", "الفيل لا يستطيع القفز"],SAYS=["وين مفتاح القاعة؟!", "نسيت القهوة!", "الكتب ثقيلة!", "الطالبات بالطريق؟", "لحظة أصلّح الشيلة", "وين البروجكتر؟!"];
-const jokeToday=()=>JOKES[Math.floor((Date.now()+3*36e5)/864e5)%JOKES.length];
+const HIKAM=["العلم في الصغر كالنقش على الحجر", "من جدّ وجد، ومن زرع حصد", "العلم نورٌ والجهل ظلام", "من طلب العُلا سهر الليالي", "حُسن السؤال نصف العلم", "زكاة العلم نشره", "آفة العلم النسيان", "العلم صيدٌ والكتابةُ قيدُه — الشافعي", "وخيرُ جليسٍ في الزمان كتابُ — المتنبي", "تعلّم فليس المرءُ يولدُ عالمًا", "بقدر الكدّ تُكتسب المعالي", "العلم بلا عمل كالشجر بلا ثمر", "قيمة كل امرئ ما يُحسنه", "العلم يُؤتى ولا يأتي", "ليس الفتى من يقول كان أبي، إن الفتى من يقول ها أنا ذا"];
+const jokeToday=()=>{const d=Math.floor((Date.now()+3*36e5)/864e5),h=d%2===0;return h?{k:'حكمة اليوم 📜',t:HIKAM[Math.floor(d/2)%HIKAM.length]}:{k:'معلومة اليوم 💡',t:JOKES[Math.floor(d/2)%JOKES.length]}};
 const sayNow=()=>SAYS[Math.floor(Date.now()/6e4)%SAYS.length];
 
 /* ---- the logo door peeks open when tapped ---- */
@@ -709,7 +710,7 @@ function vHome(stats){
     else{let nd=null;for(let k=1;k<=7&&!nd;k++){const d=new Date(now);d.setDate(d.getDate()+k);const l=todaysMeets(d.getDay());if(l.length)nd={d,x:l[0]}}
       next=`<div class="next rest"><div><div class="go">${dow>4?g('إجازة سعيدة، استمتعي بيومك','إجازة سعيدة، استمتع بيومك'):all.length?'محاضرات اليوم مُلغاة':'لا محاضرات لك اليوم'}</div>${nd?`<div class="what num">أقرب محاضرة: ${DAYS[nd.d.getDay()]} ${t12(nd.x.m.start)} · ${esc(nd.x.c.short||nd.x.c.name)}${nd.x.m.room?' · قاعة '+esc(nd.x.m.room):''}</div>`:''}</div></div>`}
   }
-  let out=`<section class="hero" data-tod="${tod}"><div class="greet"><h2>${hello}</h2><p>${esc(encourage(h,dow,tod))}</p><div class="joke"><b>معلومة اليوم 💡</b><span>${esc(jokeToday())}</span></div><p class="when">${when}</p></div>${next}</section>`+vDhikr(h);
+  let out=`<section class="hero" data-tod="${tod}"><div class="greet"><h2>${hello}</h2><p>${esc(encourage(h,dow,tod))}</p>${(j=>`<div class="joke"><b>${j.k}</b><span>${esc(j.t)}</span></div>`)(jokeToday())}<p class="when">${when}</p></div>${next}</section>`+vDhikr(h);
   if(!secs().length)return out;
   const nStu=secs().reduce((s,c)=>s+(c.students||[]).length,0),nAl=stats.filter(x=>x.level||x.cut).length;
   out+=`<div class="chips"><div class="stat"><b class="num">${secs().length}</b><span>شعب</span></div><div class="stat"><b class="num">${nStu}</b><span>طالبة</span></div><button class="stat ${nAl?'alert':''}" data-act="tab" data-tab="alerts"><b class="num">${nAl}</b><span>تنبيهات</span></button></div>`;
