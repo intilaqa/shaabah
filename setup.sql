@@ -366,3 +366,38 @@ grant execute on function public.owns_section(text) to authenticated;
 drop policy if exists "teacher reads files" on storage.objects;
 create policy "teacher reads files" on storage.objects for select to authenticated
   using (bucket_id = 'excuse-files' and public.owns_section((storage.foldername(name))[1]));
+
+-- حسابات الأستاذات: فقط إيميل الجامعة @bu.edu.sa
+create or replace function public.teacher_domain() returns text language sql immutable as $$ select 'bu.edu.sa' $$;
+create or replace function public.is_teacher() returns boolean language sql stable as
+$$ select coalesce(lower(auth.jwt()->>'email') like '%@'||public.teacher_domain(), false) $$;
+grant execute on function public.is_teacher() to anon, authenticated;
+
+drop policy if exists "my docs" on public.docs;
+create policy "my docs" on public.docs for all to authenticated using (owner = auth.uid() and public.is_teacher()) with check (owner = auth.uid() and public.is_teacher());
+
+drop policy if exists "my sections" on public.sections_public;
+create policy "my sections" on public.sections_public for all to authenticated using (owner = auth.uid() and public.is_teacher()) with check (owner = auth.uid() and public.is_teacher());
+
+drop policy if exists "my roster" on public.roster;
+create policy "my roster" on public.roster for all to authenticated using (owner = auth.uid() and public.is_teacher()) with check (owner = auth.uid() and public.is_teacher());
+
+drop policy if exists "my announcements" on public.announcements;
+create policy "my announcements" on public.announcements for all to authenticated using (owner = auth.uid() and public.is_teacher()) with check (owner = auth.uid() and public.is_teacher());
+
+drop policy if exists "my grades" on public.grades;
+create policy "my grades" on public.grades for all to authenticated using (owner = auth.uid() and public.is_teacher()) with check (owner = auth.uid() and public.is_teacher());
+
+drop policy if exists "my attendance" on public.attendance_public;
+create policy "my attendance" on public.attendance_public for all to authenticated using (owner = auth.uid() and public.is_teacher()) with check (owner = auth.uid() and public.is_teacher());
+
+drop policy if exists "teacher reads" on public.excuses;
+drop policy if exists "teacher decides" on public.excuses;
+drop policy if exists "teacher deletes" on public.excuses;
+create policy "teacher reads" on public.excuses for select to authenticated using (teacher = auth.uid() and public.is_teacher());
+create policy "teacher decides" on public.excuses for update to authenticated using (teacher = auth.uid() and public.is_teacher()) with check (teacher = auth.uid() and public.is_teacher());
+create policy "teacher deletes" on public.excuses for delete to authenticated using (teacher = auth.uid() and public.is_teacher());
+
+drop policy if exists "send messages" on public.messages;
+create policy "send messages" on public.messages for insert to authenticated
+  with check ((public.is_student() and student_user = auth.uid() and not from_teacher) or (public.is_teacher() and teacher = auth.uid() and from_teacher));

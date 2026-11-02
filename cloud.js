@@ -2,6 +2,8 @@
    فكرة وتصميم — نعيمه الرشيدي */
 (function(){
 const CFG=Object.assign({url:'',key:'',studentDomain:'albaha.onmicrosoft.com'},window.REG_CONFIG||{},lsGet('reg.cloudcfg')||{});
+const TEACHER_DOMAIN=String(CFG.teacherDomain||'bu.edu.sa').toLowerCase();
+const isTeacherEmail=e=>String(e||'').toLowerCase().endsWith('@'+TEACHER_DOMAIN);
 const isStudentEmail=e=>String(e||'').toLowerCase().endsWith('@'+String(CFG.studentDomain||'').toLowerCase())&&!!CFG.studentDomain;
 const KIND_EMO={'مرضي':'🤒','وفاة':'🖤','ظرف عائلي':'🏠','موعد رسمي':'📄','أخرى':'✏️'};
 const REJECT=['لا يوجد ما يثبت','خارج المدة المسموحة','العذر غير مقبول','التاريخ غير صحيح'];
@@ -37,7 +39,7 @@ async function connect(){
 }
 async function afterLogin(){
   /* every teacher has her own account and data; a student (university-email) account cannot be a teacher */
-  if(isStudentEmail(C.user.email)){C.owner=false;C.status='notowner';C.err='هذا إيميل طالبة. حساب الأستاذة يكون بإيميلك أنتِ.';render();return}
+  if(isStudentEmail(C.user.email)||!isTeacherEmail(C.user.email)){C.owner=false;C.status='notowner';C.err='حساب الأستاذة يكون بإيميل الجامعة فقط (@'+TEACHER_DOMAIN+').';await C.sb.auth.signOut();C.user=null;render();return}
   const prev=lsGet('reg.cloud.uid');
   if(prev&&prev!==C.user.id){
     if(C.pending.size||Object.keys(S.outbox).length){C.err='على هذا الجهاز بيانات حساب آخر لم تُرفع بعد. سجّلي دخول الحساب السابق أولًا حتى تُرفع.';C.owner=false;C.status='error';await C.sb.auth.signOut();render();return}
@@ -374,6 +376,7 @@ vManage=function(){let h=_vManage();
 async function doAuth(email,pw){
   email=String(email).trim();if(!email||pw.length<6){C.err='اكتبي البريد وكلمة مرور من ٦ أحرف على الأقل';render();return}
   if(isStudentEmail(email)){C.err='هذا إيميل طالبة. صفحة الطالبات من «أنا طالبة».';render();return}
+  if(!isTeacherEmail(email)){C.err='حساب الأستاذة يكون بإيميل الجامعة فقط (@'+TEACHER_DOMAIN+').';render();return}
   if(!online()){C.err='تسجيل الدخول يحتاج اتصالًا بالإنترنت.';render();return}
   C.authBusy=true;C.err='';render();
   const r=C.authMode==='up'?await C.sb.auth.signUp({email,password:pw,options:{emailRedirectTo:location.href.replace(/[#?].*$/,'')}}):await C.sb.auth.signInWithPassword({email,password:pw});
@@ -393,7 +396,7 @@ function gate(){
     <h1>${up?'إنشاء حساب أستاذة':'دخول الأستاذة'}</h1>
     <p>${up?'حساب واحد لكل أستاذة. شعبك وطالباتك وأعذارهن خاصة بك وحدك.':'ادخلي بحسابك لتظهر شعبك وبياناتك على هذا الجهاز.'}</p>
     <form class="card form" style="width:100%;text-align:start" onsubmit="return false" autocomplete="on">
-      <div class="f"><label for="ge">البريد الإلكتروني</label><input id="ge" name="username" type="email" dir="ltr" autocomplete="username"></div>
+      <div class="f"><label for="ge">إيميل الجامعة</label><input id="ge" name="username" type="email" dir="ltr" autocomplete="username" placeholder="name@${esc(TEACHER_DOMAIN)}"></div>
       <div class="f"><label for="gp">كلمة المرور</label><input id="gp" name="password" type="password" dir="ltr" autocomplete="${up?'new-password':'current-password'}"></div>
       ${C.err?`<div class="banner err" style="margin:0">${esc(C.err)}</div>`:''}
       ${!online()?'<div class="banner warn" style="margin:0">لا يوجد اتصال. الدخول أول مرة يحتاج الإنترنت.</div>':''}
