@@ -77,7 +77,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
 @keyframes knock{0%,100%{transform:rotate(0)}20%{transform:rotate(-3deg)}40%{transform:rotate(3deg)}60%{transform:rotate(-2deg)}80%{transform:rotate(1deg)}}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
 /* the little runner on her way to class */
-.track{position:relative;height:58px;border-radius:14px;background:linear-gradient(180deg,transparent 70%,var(--bg) 70%);overflow:hidden}
+.track{position:relative;height:88px;border-radius:14px;background:linear-gradient(180deg,transparent 70%,var(--bg) 70%);overflow:hidden}
 .track .road{position:absolute;inset-inline:10px;bottom:9px;border-bottom:3px dashed var(--line-strong)}
 .track .goal{position:absolute;bottom:10px;inset-inline-end:10px;width:26px;height:40px;border-radius:5px;background:var(--accent);box-shadow:inset 0 0 0 3px #17707a}
 .track .goal::after{content:"";position:absolute;width:5px;height:5px;border-radius:50%;background:#f2b552;inset-inline-start:5px;top:21px}
@@ -166,16 +166,51 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
 .chip .tc{font-size:.78rem;color:var(--muted);font-weight:400;display:block}
 .spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--accent-soft);border-top-color:var(--accent-ink);display:inline-block;vertical-align:-3px;animation:sp 1s linear infinite;margin-inline-end:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
+.track .say{position:absolute;bottom:56px;inset-inline-start:calc(var(--x,10%) - 18px);background:#fff;color:#15262a;border:2px solid var(--line-strong);border-radius:12px;padding:1px 9px;font-size:.74rem;font-weight:700;white-space:nowrap;animation:say 5s ease-in-out infinite;z-index:2}
+.track .say::after{content:"";position:absolute;bottom:-7px;inset-inline-start:20px;border:6px solid transparent;border-top-color:var(--line-strong)}
+@keyframes say{0%,8%{opacity:0;transform:translateY(6px) scale(.8)}14%,82%{opacity:1;transform:none}92%,100%{opacity:0;transform:translateY(-4px)}}
+.joke{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.55);border-radius:14px;padding:9px 12px;font-size:.86rem;line-height:1.6;margin-top:8px}
+.joke b{white-space:nowrap;color:var(--accent);font-size:.78rem}
+.peek{position:fixed;inset:0;z-index:95;display:grid;place-items:center;background:rgba(21,38,42,.25);animation:pk-bg 2.3s ease forwards;pointer-events:none}
+.peek svg{width:200px;height:200px;filter:drop-shadow(0 20px 30px rgba(0,0,0,.3));animation:pk-in .4s cubic-bezier(.2,1.5,.4,1)}
+.peek .door{transform-origin:168px 50%;transform-box:view-box;animation:pk-open 2.3s ease forwards}
+.peek .face{animation:pk-face 2.3s ease forwards;opacity:0}
+.peek .bub{animation:pk-face 2.3s ease forwards;opacity:0}
+@keyframes pk-bg{0%,85%{opacity:1}100%{opacity:0}}
+@keyframes pk-in{from{transform:scale(.5)}to{transform:none}}
+@keyframes pk-open{0%,15%{transform:scaleX(1)}35%,75%{transform:scaleX(.12)}90%,100%{transform:scaleX(1)}}
+@keyframes pk-face{0%,28%{opacity:0;transform:translateY(10px)}38%,72%{opacity:1;transform:none}82%,100%{opacity:0}}
+.react{position:fixed;inset-inline:16px;bottom:90px;z-index:92;margin:0 auto;max-width:330px;display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:20px;padding:12px 16px;box-shadow:0 24px 50px -24px rgba(0,0,0,.55);font-weight:700;animation:react 3s cubic-bezier(.2,1.4,.4,1) forwards;pointer-events:none}
+.react .f{font-size:2.6rem;line-height:1;animation:wob .5s ease-in-out 3}
+@keyframes react{0%{opacity:0;transform:translateY(40px) scale(.8)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0;transform:translateY(20px)}}
+@keyframes wob{0%,100%{transform:rotate(0)}30%{transform:rotate(-12deg)}70%{transform:rotate(12deg)}}
+.logo,.role-logo{cursor:pointer}
+@media (prefers-reduced-motion:reduce){.track .say,.peek *,.react,.react .f{animation:none!important}.peek .face,.peek .bub{opacity:1}}
 </style></head><body>
 <div class="wrap">
   <div class="top"><span class="brand" id="brand"><img class="logo" src="logo-mark.svg" alt=""><span>شعبتي</span></span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٤٦</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٤٧</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
+const JOKES=["«باقي ساعة على المحاضرة» ثم تصحين ٧:٥٥", "المحاضرة ساعتين، والدقيقة الأخيرة أطولهم", "«بقرأ الفصل كامل» — الكل، ليلة الاختبار", "شاحن الجوال أهم من القلم في الشنطة", "«ركزوا هذا يجي في الاختبار» أقوى منبّه بالعالم", "القهوة: الزميلة الوحيدة اللي ما تتأخر", "تسجيل المحاضرة ٩٠ دقيقة، المسموع منه ٣", "«باقي ٥ دقايق» عند الطالبة = ٢٠ دقيقة", "الكرسي الأخير في القاعة محجوز من أول الترم", "تسليم الواجب ١١:٥٩ — التوقيت الرسمي للإبداع", "«بس أصوّر السلايد» — ٤٠٠ صورة في الجوال", "أول أسبوع: دفتر جديد وألوان. الأسبوع الخامس: ورقة وحدة"],SAYS=["وين الدفتر؟!", "نسيت القهوة!", "لحظة ألبس الشوز", "الأستاذة بتسبقني!", "باقي شوي!", "وين القاعة؟!"];
+const jokeToday=()=>JOKES[Math.floor((Date.now()+3*36e5)/864e5)%JOKES.length];
+const sayNow=()=>SAYS[Math.floor(Date.now()/6e4)%SAYS.length];
+
+/* ---- the logo door peeks open when tapped ---- */
+function peek(){if(document.querySelector('.peek'))return;const o=document.createElement('div');o.className='peek';
+  o.innerHTML=`<svg viewBox="0 0 340 300"><rect x="60" y="20" width="140" height="240" rx="14" fill="#17707a"/><rect x="72" y="32" width="116" height="228" rx="10" fill="#15262a"/>
+  <g class="face"><circle cx="130" cy="120" r="40" fill="#ffd9a8"/><circle cx="117" cy="112" r="5" fill="#15262a"/><circle cx="143" cy="112" r="5" fill="#15262a"/><path d="M115 130q15 14 30 0" fill="none" stroke="#15262a" stroke-width="5" stroke-linecap="round"/><path d="M90 104q40-46 80 0q-6-34-40-34t-40 34z" fill="#3a2a22"/><path d="M168 160l26-40" stroke="#ffd9a8" stroke-width="14" stroke-linecap="round"/></g>
+  <g class="door"><rect x="72" y="32" width="116" height="228" rx="10" fill="#2a97a2"/><rect x="88" y="52" width="84" height="26" rx="7" fill="#bfe8e4"/><rect x="86" y="100" width="88" height="56" rx="12" fill="#fff"/><path d="M112 128l12 12 24-26" fill="none" stroke="#17707a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="168" cy="180" r="7" fill="#f2b552"/></g>
+  <g class="bub"><rect x="196" y="40" width="130" height="58" rx="18" fill="#fff"/><path d="M206 92l-16 18 30-12z" fill="#fff"/><text x="261" y="78" text-anchor="middle" font-size="28" font-weight="700" fill="#17707a" font-family="Cairo,IBM Plex Sans Arabic,sans-serif">حاضرة!</text></g>
+  <rect x="40" y="258" width="180" height="10" rx="5" fill="#9fd3cc"/></svg>`;
+  document.body.appendChild(o);setTimeout(()=>o.remove(),2400);
+  try{const A=window.AudioContext||window.webkitAudioContext;if(A){const c=new A(),t=c.currentTime;[[523,0],[659,.12],[784,.24]].forEach(([f,d])=>{const g=c.createGain(),s=c.createOscillator();s.type='triangle';s.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.18,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.3);s.connect(g);g.connect(c.destination);s.start(t+d);s.stop(t+d+.35)})}}catch(e){}
+}
+document.addEventListener('click',e=>{if(e.target.closest('.logo,.role-logo')){e.preventDefault();e.stopPropagation();peek()}},true);
 /* custom duotone tab icons — each carries the app's small diamond */
 const D=(x,y)=>`<rect x="${x-1.6}" y="${y-1.6}" width="3.2" height="3.2" rx=".6" transform="rotate(45 ${x} ${y})" class="dm"/>`;
 const SV=(b)=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${b}</svg>`;
@@ -467,7 +502,7 @@ function portal(){
       :(()=>{const soon=n.k===0&&!n.now&&n.inMin<=60,hot=n.now||(n.k===0&&n.inMin<=5),C=2*Math.PI*48,prog=n.now?1:soon?Math.max(.04,1-n.inMin/60):0;
         const ring=soon||n.now?`<svg viewBox="0 0 104 104" preserveAspectRatio="none"><rect class="tr" x="3" y="3" width="98" height="98" rx="20" pathLength="100"/><rect class="pr" x="3" y="3" width="98" height="98" rx="20" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${(100-prog*100).toFixed(1)}"/></svg>${n.now?'':`<span class="mins num">${n.inMin} د</span>`}`:'';
         const line=n.now?'محاضرتك الآن، أسرعي!':n.k===0&&n.inMin<=5?'يلا يلا، الأستاذة وصلت القاعة!':n.m.room?`يلا على قاعة <bdi>${esc(n.m.room)}</bdi>`:'محاضرتك القادمة';
-        const run=n.k===0&&!n.now?`<div class="track" aria-hidden="true"><div class="road"></div><div class="goal"></div><span class="dust" style="--x:${(8+(1-Math.min(n.inMin,240)/240)*72).toFixed(0)}%"></span><svg class="runner" style="--x:${(8+(1-Math.min(n.inMin,240)/240)*72).toFixed(0)}%" viewBox="0 0 34 42"><g class="bob"><circle cx="17" cy="7" r="5.5" fill="#15262a"/><path d="M11 6.5q6-8 12 0" fill="#17707a"/><path d="M17 12v14" stroke="#17707a" stroke-width="5" stroke-linecap="round"/><path class="ar1" d="M17 15l-7 5" stroke="#15262a" stroke-width="3" stroke-linecap="round"/><g class="pp"><rect x="19" y="13" width="9" height="11" rx="1.5" fill="#fff" stroke="#9fb4b3" stroke-width="1.5"/></g></g><path class="lg1" d="M17 26l-6 12" stroke="#15262a" stroke-width="3.2" stroke-linecap="round"/><path class="lg2" d="M17 26l6 12" stroke="#15262a" stroke-width="3.2" stroke-linecap="round"/></svg></div>`:'';
+        const run=n.k===0&&!n.now?`<div class="track" aria-hidden="true"><div class="road"></div><div class="goal"></div><span class="say" style="--x:${(8+(1-Math.min(n.inMin,240)/240)*72).toFixed(0)}%">${esc(sayNow())}</span><span class="dust" style="--x:${(8+(1-Math.min(n.inMin,240)/240)*72).toFixed(0)}%"></span><svg class="runner" style="--x:${(8+(1-Math.min(n.inMin,240)/240)*72).toFixed(0)}%" viewBox="0 0 34 42"><g class="bob"><circle cx="17" cy="7" r="5.5" fill="#15262a"/><path d="M11 6.5q6-8 12 0" fill="#17707a"/><path d="M17 12v14" stroke="#17707a" stroke-width="5" stroke-linecap="round"/><path class="ar1" d="M17 15l-7 5" stroke="#15262a" stroke-width="3" stroke-linecap="round"/><g class="pp"><rect x="19" y="13" width="9" height="11" rx="1.5" fill="#fff" stroke="#9fb4b3" stroke-width="1.5"/></g></g><path class="lg1" d="M17 26l-6 12" stroke="#15262a" stroke-width="3.2" stroke-linecap="round"/><path class="lg2" d="M17 26l6 12" stroke="#15262a" stroke-width="3.2" stroke-linecap="round"/></svg></div>`:'';
         return `<div class="hero"><div class="ring ${hot?'hot':''}">${ring}<div class="plate"><small>القاعة</small><b>${esc(n.m.room||'—')}</b></div></div><div><div class="go ${hot?'hurry':''}">${line}</div><div class="sub num">${esc(n.sec.short||n.sec.name)} · ${when}</div>${n.k===0?`<div class="wait">${esc(T)} تنتظرك</div>`:''}</div></div>${run}`})()}
   const today=ymd(new Date()),dow=new Date().getDay();
   const todayHad=mine.some(x=>(x.meetings||[]).some(m=>m.day===dow));
@@ -490,7 +525,7 @@ function portal(){
   else if(S.tab==='msg')body=msgsView();
   else if(S.tab==='exc')body=`<h2>أعذاري</h2>${mineView()||'<p class="sub">لم ترسلي أي عذر بعد.</p>'}<div class="row2"><button class="btn" data-a="excuse">📩 إرسال عذر جديد</button></div>`;
   else body=`${celebrate()}${warnBanner()}${pushCard()}${S.err&&S.tab==='home'?`<div class="err">${esc(S.err)}</div>`:''}${anns.map(a=>{const x=mine.find(z=>z.id===a.section_id)||mine.find(z=>z.owner===a.owner);return `<div class="annb">${newA.includes(a)?'<span class="nw">جديد</span>':''}📢 ${esc(a.body)}<small class="num">${esc(x?tName(x):'')}${a.section_id&&x?' · '+esc(x.short||x.name):''} · ${esc(fD.format(new Date(a.created_at)))}</small></div>`}).join('')}
-     <div class="greet"><h1>${hello}</h1><p class="sub">${esc(enc)}</p></div>${top}${offN}
+     <div class="greet"><h1>${hello}</h1><p class="sub">${esc(enc)}</p><div class="joke"><b>نكتة اليوم</b><span>${esc(jokeToday())}</span></div></div>${top}${offN}
      ${S.att.length?`<p class="sech">حضوري</p><div class="chips">${attCards(false)}</div>`:''}
      ${cxs.length?`<div class="wk">${cxs.map(c=>{const m=(c.sec.meetings||[]).find(x=>x.id===c.meeting_id);return `<div class="ann cx" style="display:block">❌ أُلغيت محاضرة ${esc(c.sec.short||c.sec.name)} ${esc(DAYS[pd(c.date).getDay()]+' '+fD.format(pd(c.date)))}${m?' '+t12(m.start):''}${c.reason?' · '+esc(c.reason):''}</div>`}).join('')}</div>`:''}
      <div class="row2"><button class="btn" data-a="excuse">📩 عندي عذر</button></div>
