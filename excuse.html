@@ -212,7 +212,7 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><img class="logo" src="logo-mark.svg" alt=""><span>شعبتي</span></span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٥٢</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٥٣</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -369,15 +369,15 @@ function nextLecture(sec){const now=new Date(),nowM=now.getHours()*60+now.getMin
 function loginView(){
   const v=$('view'),L=S.login;$('bar').style.width='0';$('step').textContent='';$('brand').lastChild.textContent='شعبتي';
   if(!sb){v.innerHTML=`<section class="card"><h1>أهلًا بك</h1><div class="err">الصفحة غير مرتبطة بعد. أخبري أستاذتك.</div></section>`;return}
-  v.innerHTML=`<section class="card"><h1>ادخلي بإيميلك الجامعي</h1>
-  ${L.step==='email'?`<p class="sub">نرسل لك رمز دخول على إيميلك الجامعي. تدخلين مرة واحدة فقط على هذا الجوال.</p>
-    <div class="f"><label for="le">الإيميل الجامعي أو الرقم الجامعي</label><input id="le" dir="ltr" autocomplete="email" inputmode="email" value="${esc(L.email)}" placeholder="446000819@${esc(DOMAIN)}"></div>
+  v.innerHTML=`<section class="card"><h1>ادخلي برقمك الجامعي</h1>
+  ${L.step==='email'?`<p class="sub">اكتبي رقمك الجامعي، ونرسل رمز الدخول إلى إيميلك الجامعي. تدخلين مرة واحدة فقط على هذا الجوال.</p>
+    <div class="f"><label for="le">الرقم الجامعي</label><input id="le" dir="ltr" inputmode="numeric" autocomplete="username" maxlength="12" value="${esc(uidOf(L.email))}" placeholder="446000819" style="font-size:1.3rem;letter-spacing:.08em;text-align:center"></div>
     ${L.err?`<div class="err">${esc(L.err)}${L.detail?`<small style="display:block;direction:ltr;opacity:.8;margin-top:4px">${esc(L.detail)}</small>`:''}</div>`:''}
     <div class="nav"><span></span><button class="btn" data-a="lSend"${L.busy?' disabled':''}>${L.busy?'<span class="spin"></span>جارٍ الإرسال':'أرسلي الرمز'}</button></div>`
-  :`<p class="sub">أرسلنا رمزًا إلى <b dir="ltr">${esc(L.email)}</b>. افتحي بريدك الجامعي (Outlook)، وتأكدي من مجلد «الرسائل غير الهامة».</p>
+  :`<p class="sub">أرسلنا رمزًا إلى إيميلك الجامعي <b dir="ltr">${esc(L.email)}</b>. افتحي بريدك (Outlook)، وتأكدي من مجلد «الرسائل غير الهامة».</p>
     <div class="f"><label for="lc">رمز الدخول</label><input id="lc" dir="ltr" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="font-size:1.4rem;letter-spacing:.3em;text-align:center"></div>
     ${L.err?`<div class="err">${esc(L.err)}</div>`:''}
-    <div class="nav"><button class="back" data-a="lBack">→ تغيير الإيميل</button><button class="btn" data-a="lVerify"${L.busy?' disabled':''}>${L.busy?'<span class="spin"></span>لحظة':'دخول'}</button></div>`}
+    <div class="nav"><button class="back" data-a="lBack">→ تغيير الرقم</button><button class="btn" data-a="lVerify"${L.busy?' disabled':''}>${L.busy?'<span class="spin"></span>لحظة':'دخول'}</button></div>`}
   ${!online()?'<div class="err">الدخول أول مرة يحتاج اتصالًا بالإنترنت.</div>':''}</section>`;
 }
 async function loadMine(){
@@ -600,8 +600,9 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-a]')
     if(error){S.err=/not in this section/i.test(error.message||'')?'رقمك غير موجود في كشف هذه الشعبة.':'تعذّر الإرسال، حاولي مرة ثانية.';render();$('mb')&&($('mb').value=body);return}
     await loadMsgs();render();return}
   if(a==='stab'){S.tab=t.dataset.v;S.mthread=null;if(S.tab==='msg')loadMsgs();ls.set('exc.tab',S.tab);render();window.scrollTo(0,0);if(S.tab==='grades')loadGrades();if(S.tab==='exc')loadMine();return}
-  if(a==='lSend'){const em=emailOf(($('le')||{}).value||'');S.login.email=em;
-    if(!em.endsWith('@'+DOMAIN)){S.login.err='اكتبي إيميلك الجامعي المنتهي بـ @'+DOMAIN;render();return}
+  if(a==='lSend'){const id=uidOf(($('le')||{}).value||'');
+    if(!/^\d{5,12}$/.test(id)){S.login.email='';S.login.err='اكتبي رقمك الجامعي (أرقام فقط).';render();return}
+    const em=id+'@'+DOMAIN;S.login.email=em;
     if(!online()){S.login.err='لا يوجد اتصال بالإنترنت.';render();return}
     S.login.busy=true;S.login.err='';render();
     const {error}=await sb.auth.signInWithOtp({email:em,options:{shouldCreateUser:true}});
