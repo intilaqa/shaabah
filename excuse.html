@@ -211,12 +211,12 @@ h2{font-family:var(--f-hero);font-size:1.3rem;margin:0;line-height:1.35}
   <div class="top"><span class="brand" id="brand"><img class="logo" src="logo-mark.svg" alt=""><span>شعبتي</span></span><span><span id="step" class="sub num"></span> <span id="net" class="net"><i></i></span></span></div>
   <div class="prog" aria-hidden="true"><i id="bar" style="width:0"></i></div>
   <main id="view"></main>
-  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٤٨</span></p>
+  <p class="foot">فكرة وتصميم — <b>نعيمه الرشيدي</b><br><button data-a="iamT">أنا الأستاذة</button><br><span style="font-size:.7rem;opacity:.6">الإصدار ٤٩</span></p>
 </div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
-const JOKES=["القهوة تقول: لولاي ما صحيتوا", "سألوا الساعة: ليش دايم مستعجلة؟ قالت: الوقت ما ينتظر أحد", "الشاي والقهوة تهاوشوا… والحليب صار وسيط", "سألوا القمر: ليش ما تطلع الصبح؟ قال: النهار زحمة", "البطيخ يقول: لا تحكمون علي من القشرة", "المظلة تقول: أنا ما أطلع إلا وقت الأزمات", "المنبّه: الوحيد اللي يزعّلونه وهم يحتاجونه", "سألوا السلحفاة: متى توصلين؟ قالت: المهم أوصل", "الغيمة تقول: لا تلوموني، أنا بس أشيل وأحط", "سألوا البيض: وش مشكلتك؟ قال: الضغط يكسرني", "النعناع يقول: أنا السرّ اللي يخلّي الشاي يبتسم", "سألوا الكرسي: وش أصعب شي؟ قال: الناس اللي تقعد وما تقوم", "الموية تقول: أنا مع الكل… بس أخذ شكل الكاس", "التمر يقول: صغير بس أسوّي فرق"],SAYS=["وين الدفتر؟!", "نسيت القهوة!", "لحظة ألبس الشوز", "الأستاذة بتسبقني!", "باقي شوي!", "وين القاعة؟!"];
+const JOKES=["للأخطبوط ثلاثة قلوب", "قلب الإنسان ينبض نحو ١٠٠ ألف مرة في اليوم", "ضوء الشمس يصل إلى الأرض في نحو ٨ دقائق و٢٠ ثانية", "القمر يبتعد عن الأرض نحو ٣٫٨ سم كل سنة", "عين النعامة أكبر من دماغها", "الدلافين تنام بنصف دماغها، والنصف الثاني يبقى صاحيًا", "الفراشة تتذوّق بأقدامها", "جسم الإنسان البالغ فيه ٢٠٦ عظمة", "الماء يغطي نحو ٧١٪ من سطح الأرض", "لسان الزرافة طوله نحو ٤٥ سم", "الموز يُصنَّف نباتيًا من التوت، والفراولة لا", "الإنسان يرمش نحو ١٥ إلى ٢٠ مرة في الدقيقة", "التمر فيه بوتاسيوم أكثر من الموز بنفس الوزن", "صوت الرعد سببه تمدّد الهواء بسرعة بعد حرارة البرق", "العسل المحفوظ جيدًا يبقى صالحًا سنوات طويلة جدًا", "الفيل لا يستطيع القفز"],SAYS=["وين الدفتر؟!", "نسيت القهوة!", "لحظة ألبس الشوز", "الأستاذة بتسبقني!", "باقي شوي!", "وين القاعة؟!"];
 const jokeToday=()=>JOKES[Math.floor((Date.now()+3*36e5)/864e5)%JOKES.length];
 const sayNow=()=>SAYS[Math.floor(Date.now()/6e4)%SAYS.length];
 
@@ -546,7 +546,7 @@ function portal(){
   else if(S.tab==='msg')body=msgsView();
   else if(S.tab==='exc')body=`<h2>أعذاري</h2>${mineView()||'<p class="sub">لم ترسلي أي عذر بعد.</p>'}<div class="row2"><button class="btn" data-a="excuse">📩 إرسال عذر جديد</button></div>`;
   else body=`${celebrate()}${warnBanner()}${pushCard()}${S.err&&S.tab==='home'?`<div class="err">${esc(S.err)}</div>`:''}${anns.map(a=>{const x=mine.find(z=>z.id===a.section_id)||mine.find(z=>z.owner===a.owner);return `<div class="annb">${newA.includes(a)?'<span class="nw">جديد</span>':''}📢 ${esc(a.body)}<small class="num">${esc(x?tName(x):'')}${a.section_id&&x?' · '+esc(x.short||x.name):''} · ${esc(fD.format(new Date(a.created_at)))}</small></div>`}).join('')}
-     <div class="greet"><h1>${hello}</h1><p class="sub">${esc(enc)}</p><div class="joke"><b>نكتة اليوم</b><span>${esc(jokeToday())}</span></div></div>${top}${offN}
+     <div class="greet"><h1>${hello}</h1><p class="sub">${esc(enc)}</p><div class="joke"><b>معلومة اليوم 💡</b><span>${esc(jokeToday())}</span></div></div>${top}${offN}
      ${S.att.length?`<p class="sech">حضوري</p><div class="chips">${attCards(false)}</div>`:''}
      ${cxs.length?`<div class="wk">${cxs.map(c=>{const m=(c.sec.meetings||[]).find(x=>x.id===c.meeting_id);return `<div class="ann cx" style="display:block">❌ أُلغيت محاضرة ${esc(c.sec.short||c.sec.name)} ${esc(DAYS[pd(c.date).getDay()]+' '+fD.format(pd(c.date)))}${m?' '+t12(m.start):''}${c.reason?' · '+esc(c.reason):''}</div>`}).join('')}</div>`:''}
      <div class="row2"><button class="btn" data-a="excuse">📩 عندي عذر</button></div>
