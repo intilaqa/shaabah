@@ -401,3 +401,8 @@ create policy "teacher deletes" on public.excuses for delete to authenticated us
 drop policy if exists "send messages" on public.messages;
 create policy "send messages" on public.messages for insert to authenticated
   with check ((public.is_student() and student_user = auth.uid() and not from_teacher) or (public.is_teacher() and teacher = auth.uid() and from_teacher));
+
+
+-- إيميلات الطالبات المقبولة (الاثنين صحيحين)
+create or replace function public.is_student() returns boolean language sql stable as
+$$ select coalesce(split_part(lower(auth.jwt()->>'email'),'@',2) in ('stu.bu.edu.sa','albaha.onmicrosoft.com'), false) $$;

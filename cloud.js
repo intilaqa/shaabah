@@ -4,7 +4,8 @@
 const CFG=Object.assign({url:'',key:'',studentDomain:'stu.bu.edu.sa'},window.REG_CONFIG||{},lsGet('reg.cloudcfg')||{});
 const TEACHER_DOMAIN=String(CFG.teacherDomain||'bu.edu.sa').toLowerCase();
 const isTeacherEmail=e=>String(e||'').toLowerCase().endsWith('@'+TEACHER_DOMAIN);
-const isStudentEmail=e=>String(e||'').toLowerCase().endsWith('@'+String(CFG.studentDomain||'').toLowerCase())&&!!CFG.studentDomain;
+const SDOMS=(CFG.studentDomains||[CFG.studentDomain]).filter(Boolean).map(d=>String(d).toLowerCase());
+const isStudentEmail=e=>SDOMS.some(d=>String(e||'').toLowerCase().endsWith('@'+d));
 const KIND_EMO={'مرضي':'🤒','وفاة':'🖤','ظرف عائلي':'🏠','موعد رسمي':'📄','أخرى':'✏️'};
 const REJECT=['لا يوجد ما يثبت','خارج المدة المسموحة','العذر غير مقبول','التاريخ غير صحيح'];
 const C={sb:null,user:null,owner:false,status:'off',err:'',pending:new Set(lsGet('reg.cloud.pending')||[]),lastPull:lsGet('reg.cloud.lastPull')||'',
