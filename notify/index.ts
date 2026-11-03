@@ -1,6 +1,6 @@
-/* Copyright (c) 2026 Naimah Alrasheedi (نعيمه الرشيدي). All rights reserved.
+/* Copyright (c) 2026 نعيمه سعيد نافع الرشيدي (Naimah Alrasheedi). All rights reserved.
    شعبتي — الحضور والأعذار
-   Author: Naimah Alrasheedi */
+   Author: نعيمه سعيد نافع الرشيدي (Naimah Alrasheedi) */
 // شعبتي — إرسال إشعارات الجوال للطالبات
 // ١) إعلان جديد  ٢) قبل المحاضرة بـ 15 دقيقة (يُستدعى كل 5 دقائق)
 import webpush from "npm:web-push@3.6.7";

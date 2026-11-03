@@ -1,6 +1,6 @@
-/* Copyright (c) 2026 Naimah Alrasheedi (نعيمه الرشيدي). All rights reserved.
+/* Copyright (c) 2026 نعيمه سعيد نافع الرشيدي (Naimah Alrasheedi). All rights reserved.
    شعبتي — الحضور والأعذار
-   Author: Naimah Alrasheedi */
+   Author: نعيمه سعيد نافع الرشيدي (Naimah Alrasheedi) */
 /* سجل الحضور — الربط بالإنترنت (Supabase) والأعذار
    فكرة وتصميم — نعيمه الرشيدي */
 (function(){
