@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 Naimah Alrasheedi (نعيمه الرشيدي). All rights reserved.
+   شعبتي — الحضور والأعذار
+   Author: Naimah Alrasheedi */
 /* بيانات مشروع Supabase (Project Settings → API) */
 window.REG_CONFIG = {
   url: "https://pumeiysvtzdpqtbpzobr.supabase.co",
