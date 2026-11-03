@@ -1,5 +1,10 @@
 /* نسخة العرض: كل التخزين المحلي معزول تحت بادئة demo: حتى لا يختلط بالتطبيق الحقيقي */
 (function(){
+  /* لو التخزين المحلي محجوب (متصفح داخل تطبيق أو تصفح خاص) نستخدم ذاكرة مؤقتة */
+  let ok=true;try{const t='__demo_t';window.localStorage.setItem(t,'1');window.localStorage.removeItem(t)}catch(e){ok=false}
+  if(!ok){const m=new Map(),mem={getItem:k=>m.has(String(k))?m.get(String(k)):null,setItem:(k,v)=>{m.set(String(k),String(v))},removeItem:k=>{m.delete(String(k))},clear:()=>m.clear(),key:i=>[...m.keys()][i]??null,get length(){return m.size}};
+    try{Object.defineProperty(window,'localStorage',{configurable:true,get:()=>mem})}catch(e){}
+    try{Object.defineProperty(window,'sessionStorage',{configurable:true,get:()=>mem})}catch(e){}}
   const P='demo:',S=Storage.prototype,g=S.getItem,s=S.setItem,r=S.removeItem,k=S.key;
   S.getItem=function(x){return g.call(this,P+x)};
   S.setItem=function(x,v){return s.call(this,P+x,v)};

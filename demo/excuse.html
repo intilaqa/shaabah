@@ -1,4 +1,66 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex"><script src="common.js"></script><script src="student.js"></script>
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex"><script>/* نسخة العرض: كل التخزين المحلي معزول تحت بادئة demo: حتى لا يختلط بالتطبيق الحقيقي */
+(function(){
+  /* لو التخزين المحلي محجوب (متصفح داخل تطبيق أو تصفح خاص) نستخدم ذاكرة مؤقتة */
+  let ok=true;try{const t='__demo_t';window.localStorage.setItem(t,'1');window.localStorage.removeItem(t)}catch(e){ok=false}
+  if(!ok){const m=new Map(),mem={getItem:k=>m.has(String(k))?m.get(String(k)):null,setItem:(k,v)=>{m.set(String(k),String(v))},removeItem:k=>{m.delete(String(k))},clear:()=>m.clear(),key:i=>[...m.keys()][i]??null,get length(){return m.size}};
+    try{Object.defineProperty(window,'localStorage',{configurable:true,get:()=>mem})}catch(e){}
+    try{Object.defineProperty(window,'sessionStorage',{configurable:true,get:()=>mem})}catch(e){}}
+  const P='demo:',S=Storage.prototype,g=S.getItem,s=S.setItem,r=S.removeItem,k=S.key;
+  S.getItem=function(x){return g.call(this,P+x)};
+  S.setItem=function(x,v){return s.call(this,P+x,v)};
+  S.removeItem=function(x){return r.call(this,P+x)};
+  S.clear=function(){const ks=[];for(let i=0;i<this.length;i++){const n=k.call(this,i);if(n&&n.startsWith(P))ks.push(n)}ks.forEach(n=>r.call(this,n))};
+  window.REG_CONFIG={url:'https://demo.invalid',key:'demo',studentDomain:'stu.bu.edu.sa',studentDomains:['stu.bu.edu.sa'],teacherDomain:'bu.edu.sa',vapid:''};
+  const pad=n=>String(n).padStart(2,'0');
+  window.DEMO={
+    ymd:d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()),
+    day:n=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+n);return d},
+    /* بداية فصل تجعل اليوم في الأسبوع العاشر تقريبًا */
+    termStart(){const d=DEMO.day(-66);d.setDate(d.getDate()-d.getDay());return DEMO.ymd(d)},
+    rnd(seed){let x=seed>>>0||1;return()=>{x^=x<<13;x>>>=0;x^=x>>17;x^=x<<5;x>>>=0;return x/4294967296}},
+    iso:d=>d.toISOString(),
+    /* كائن استعلام عام يقبل أي سلسلة دوال مثل Supabase */
+    client(DB,user,fileBlob){
+      const q=t=>{let res=null;const prox=new Proxy({},{get(_,m){
+        if(m==='then')return(ok,bad)=>Promise.resolve(res||{data:DB[t]||[],error:null,count:(DB[t]||[]).length||1}).then(ok,bad);
+        if(m==='insert'||m==='upsert')return rows=>{const arr=(Array.isArray(rows)?rows:[rows]).map(r=>({id:'d'+Math.random().toString(36).slice(2),created_at:new Date().toISOString(),...r}));
+          if(m==='insert'&&t!=='docs'&&t!=='push_subs'){DB[t]=DB[t]||[];DB[t].push(...arr)}res={data:Array.isArray(rows)?arr:arr[0],error:null};return prox};
+        if(m==='update'||m==='delete')return()=>{res={data:null,error:null};return prox};
+        if(m==='single'||m==='maybeSingle')return()=>{const r0=res?res.data:(DB[t]||[])[0];res={data:Array.isArray(r0)?r0[0]:r0||null,error:null};return prox};
+        return()=>prox}});return prox};
+      const ses={data:{session:{user}}};
+      return{from:q,
+        auth:{getSession:async()=>ses,getUser:async()=>({data:{user}}),onAuthStateChange(){return{data:{subscription:{unsubscribe(){}}}}},
+          signOut:async()=>({error:null}),signInWithOtp:async()=>({error:null}),verifyOtp:async()=>ses,signInWithPassword:async()=>ses},
+        storage:{from:()=>({upload:async()=>({data:{},error:null}),download:async()=>({data:fileBlob,error:null}),remove:async()=>({error:null})})},
+        functions:{invoke:async()=>({data:null,error:null})},channel:()=>({on(){return this},subscribe(){return this}}),removeChannel(){}}
+    },
+    banner(other,label){addEventListener('DOMContentLoaded',()=>{const b=document.createElement('a');b.href=other;b.className='demo-pill';
+      b.innerHTML='نسخة عرض ببيانات تجريبية<span>'+label+'</span>';document.body.appendChild(b);
+      const st=document.createElement('style');st.textContent='.demo-pill{position:fixed;z-index:9999;left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);background:#1d2b36;color:#fff;font:600 12px/1.2 "IBM Plex Sans Arabic",system-ui,sans-serif;padding:8px 12px;border-radius:999px;text-decoration:none;box-shadow:0 6px 18px #0003;display:flex;gap:8px;align-items:center;opacity:.92}.demo-pill span{background:#f5b83d;color:#1d2b36;border-radius:999px;padding:3px 8px}';document.head.appendChild(st)})}
+  };
+})();
+</script><script>/* بيانات تجريبية للطالبة */
+(function(){
+  const D=DEMO,now=new Date(),iso=D.iso,TS=D.termStart(),day=D.day,ymd=D.ymd,ago=h=>iso(new Date(Date.now()-h*36e5));
+  const DB={
+    roster:[{section_id:'c1',name:'رهف محمد الغامدي'},{section_id:'c2',name:'رهف محمد الغامدي'}],
+    sections_public:[
+      {id:'c1',owner:'t1',teacher:'أستاذة نعيمه',hours_note:'من الأحد إلى الخميس، ٨ ص – ٢ م',name:'شعبة F32 — MIS-1508 الابتكار والتقنيات الناشئة',short:'F32 الابتكار',term_start:TS,weeks:15,
+       meetings:[{id:'m1',day:0,start:'11:00',end:'12:40',room:'SH-BF-18',hours:2},{id:'m2',day:2,start:'13:00',end:'13:50',room:'SH-BF-18',hours:1},{id:'m8',day:4,start:'11:00',end:'11:50',room:'SH-BF-18',hours:1}],cancelled:[]},
+      {id:'c2',owner:'t2',teacher:'دكتورة سارة',hours_note:'',name:'شعبة F32 — MIS-1406 نظم المعلومات الإدارية',short:'F32 نظم',term_start:TS,weeks:15,
+       meetings:[{id:'m3',day:1,start:'10:00',end:'11:40',room:'SH-BS-10',hours:2},{id:'m4',day:3,start:'08:00',end:'09:40',room:'SH-BS-10',hours:2}],cancelled:[{date:ymd(day(7)),meeting_id:'m4',reason:'اجتماع القسم'}]}],
+    announcements:[{id:'a1',owner:'t1',section_id:null,body:'تذكير: الاختبار القصير الأول الأربعاء القادم، راجعن الفصلين الأول والثاني',created_at:ago(22),until:ymd(day(5))}],
+    grades:[{section_id:'c1',title:'اختبار نصفي',items:{'س١':12,'س٢':14},total:26,max:30,updated_at:ago(50)},{section_id:'c2',title:'واجب ١',items:{'الدرجة':9},total:9,max:10,updated_at:ago(120)}],
+    messages:[{id:'x1',section_id:'c1',from_teacher:false,body:'السلام عليكم أستاذة، هل الاختبار القصير يشمل الفصل الثالث؟',created_at:ago(30),read_at:ago(29)},
+              {id:'x2',section_id:'c1',from_teacher:true,body:'وعليكم السلام، لا، الفصلين الأول والثاني فقط. بالتوفيق',created_at:ago(3),read_at:null}],
+    attendance_public:[{section_id:'c1',att_pct:86.67,abs_h:6,planned:45,max_abs:11.25,left_h:5.25,level:1,cut:false,min_attend:75,items:[{d:ymd(day(-30)),m:'a',h:2},{d:ymd(day(-21)),m:'a',h:2},{d:ymd(day(-6)),m:'e',h:2}],updated_at:iso(now)},
+                       {section_id:'c2',att_pct:100,abs_h:0,planned:60,max_abs:15,left_h:15,level:0,cut:false,min_attend:75,items:[],updated_at:iso(now)}],
+    excuses:[{id:'e1',section_id:'c1',lecture_date:ymd(day(-6)),kind:'مرضي',status:'approved',created_at:ago(140)},{id:'e2',section_id:'c2',lecture_date:ymd(day(-2)),kind:'ظرف عائلي',status:'pending',created_at:ago(40)}]};
+  window.supabase={createClient:()=>D.client(DB,{id:'u1',email:'446000123@stu.bu.edu.sa'},null)};
+  D.banner('index.html?role=t','جرّبي صفحة الأستاذة');
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17707a">
 <title>شعبتي · عرض تجريبي</title>

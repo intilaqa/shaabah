@@ -24,8 +24,9 @@
       const marks={};for(const s of c.students){const p=risk[s.id]||.03,x=R();marks[s.id]=x<p?'a':x<p+.035?'l':x<p+.045?'e':'p'}
       attendance[id]={classId:cid,date:ds,meetingId:m.id,start:m.start,hours:m.hours,marks,updatedAt:d.toISOString()}}}
   const seed={config:{settings:{terms:[{id:'t1',name:'الفصل الأول ١٤٤٨هـ',start:TS,weeks:15}],currentTerm:'t1',profile:{title:'أستاذة',name:'نعيمه'},minAttend:75,warn1:10,warn2:20}},classes,attendance};
-  try{if(localStorage.getItem('demo.day')!==today||!localStorage.getItem('reg.db.v1')){
-    Object.keys(localStorage).filter(k=>k.startsWith('demo:')).forEach(k=>Storage.prototype.removeItem.call(localStorage,k.slice(5)));
+  let cur=null;try{cur=JSON.parse(localStorage.getItem('reg.db.v1')||'null')}catch(e){}
+  try{if(localStorage.getItem('demo.day')!==today||!cur||!cur.classes||!Object.keys(cur.classes).length){
+    localStorage.clear();
     localStorage.setItem('reg.db.v1',JSON.stringify(seed));localStorage.setItem('reg.cloud.uid','demo-t');localStorage.setItem('reg.cloud.lastPull','2000-01-01');localStorage.setItem('demo.day',today)}}catch(e){}
   /* الأعذار والرسائل والإعلانات كما تصل من الطالبات */
   const S=c=>classes[c].students,ago=h=>D.iso(new Date(Date.now()-h*36e5));
